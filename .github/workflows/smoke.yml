@@ -1,0 +1,29 @@
+name: smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python (for log-convoy-event JSON encoding + schema validation)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Run smoke test
+        run: bash tests/smoke.sh

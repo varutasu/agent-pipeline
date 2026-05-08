@@ -1,0 +1,76 @@
+# Validation: agent-context system
+
+*Run on: {{YYYY-MM-DD}}*
+*Cursor version: {{CURSOR_VERSION}}*
+*Model used: {{MODEL_NAME}}*
+
+## Seed task
+
+> {{SEED_TASK_PROMPT}}
+
+Pick a task that exercises every layer: a real (not yet existing) feature that requires the agent to find auth helpers, find a domain model, and follow at least one convention rule. Keep it scoped to one or two files and ~50-100 lines of code change. Avoid tasks that need cross-file architectural decisions for the first run — those amplify variance.
+
+## Procedure
+
+### Baseline — rules and skills off
+
+1. Temporarily rename `.cursor/rules/` → `.cursor/rules.disabled/` and `.cursor/skills/` → `.cursor/skills.disabled/`. (Keep `AGENTS.md` either way; it's the same in both runs.)
+2. Restart Cursor (Cmd+Q and reopen) so the rule cache flushes.
+3. Open a fresh chat in this repo.
+4. Paste the seed task verbatim.
+5. Capture metrics from Cursor's context panel and the agent transcript:
+
+| Metric | Value |
+| --- | --- |
+| Total tool calls | {{N}} |
+| Conversation tokens (this chat only) | {{N}}K |
+| Total context at end | {{N}}K of 300K ({{PCT}}% full) |
+| Wall-clock to first proposed diff | {{MM:SS}} |
+| Did it grep for conventions? | {{Y/N}} |
+| Produced a passing diff? | {{Y/N}} |
+
+6. Restore the directories: `mv .cursor/rules.disabled .cursor/rules` and `mv .cursor/skills.disabled .cursor/skills`.
+
+### Pipeline — rules and skills on
+
+1. Confirm `.cursor/rules/` and `.cursor/skills/` are restored.
+2. Restart Cursor again.
+3. Open a fresh chat in this repo.
+4. Paste the same seed task verbatim.
+5. Capture the same metrics.
+
+| Metric | Value |
+| --- | --- |
+| Total tool calls | {{N}} |
+| Conversation tokens (this chat only) | {{N}}K |
+| Total context at end | {{N}}K of 300K ({{PCT}}% full) |
+| Wall-clock to first proposed diff | {{MM:SS}} |
+| Skill activated | {{NAME_OR_NONE}} |
+| Rule(s) activated (visible in context panel) | {{NAMES}} |
+| Produced a passing diff? | {{Y/N}} |
+
+## Comparison
+
+| Metric | Baseline | Pipeline | Delta | % change |
+| --- | --- | --- | --- | --- |
+| Tool calls | {{N}} | {{N}} | {{N}} | {{PCT}}% |
+| Conversation tokens | {{N}}K | {{N}}K | {{N}}K | {{PCT}}% |
+| Total context at end | {{N}}K | {{N}}K | {{N}}K | {{PCT}}% |
+| Wall-clock to first diff | {{MM:SS}} | {{MM:SS}} | — | — |
+
+## Go / no-go decision
+
+**Acceptance bar**: ≥ 50% reduction in conversation tokens.
+
+- **Met the bar** → ship the curated layer. Move on to the next repo.
+- **Missed the bar** → audit which layer is underperforming:
+  - `AGENTS.md` too verbose (target <120 lines).
+  - Rule globs not matching the seed task's files.
+  - Skill descriptions not specific enough to activate.
+  - Schema map (if applicable) not surfacing the right model group.
+
+**Decision**: {{GO_OR_NO_GO_WITH_REASONING}}
+
+## Notes
+
+{{QUALITATIVE_OBSERVATIONS_FROM_BOTH_RUNS}}

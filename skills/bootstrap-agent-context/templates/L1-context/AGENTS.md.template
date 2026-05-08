@@ -1,0 +1,76 @@
+# AGENTS.md — AI collaboration ({{PROJECT_NAME}})
+
+Guidance for agents and humans working in this repo. Prefer existing patterns over new abstractions.
+
+## 1. Project overview
+
+{{PROJECT_DESCRIPTION_2_3_SENTENCES}}
+
+- **Framework:** {{FRAMEWORK_AND_VERSION}}
+- **Data:** {{DATA_LAYER_E_G_PRISMA_POSTGRES}}
+- **Auth:** {{AUTH_LIBRARY_AND_PROVIDERS}}
+- **UI:** {{UI_FRAMEWORK_AND_PRIMITIVES}}
+- **Hosting:** {{DEPLOY_TARGET}}
+
+## 2. Architecture quick reference
+
+| Area | Path | Notes |
+| --- | --- | --- |
+| {{AREA_1}} | `{{PATH_1}}` | {{NOTE_1}} |
+| {{AREA_2}} | `{{PATH_2}}` | {{NOTE_2}} |
+| {{AREA_3}} | `{{PATH_3}}` | {{NOTE_3}} |
+<!-- Add 3-8 rows total. Aim for the folders agents will edit most often. -->
+
+<!--
+If applicable, add lines like:
+- API endpoints live under `app/api/**/route.ts`. Full reference: [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md).
+- Schema map: [`docs/SCHEMA_MAP.md`](docs/SCHEMA_MAP.md).
+-->
+
+## 3. Key conventions
+
+<!-- Drop sections that don't apply. Each bullet is the smallest reminder that prevents a real mistake. -->
+
+- **Auth (server):** {{HOW_TO_GET_SESSION}}
+- **API errors / guards:** {{ERROR_HELPER_LOCATION}}
+- **Toasts / notifications:** {{IF_APPLICABLE}}
+- **Theming / colors:** {{IF_APPLICABLE}}
+- **Imports:** {{ALIAS_E_G_AT_ROOT}} → repo root (`tsconfig.json` / equivalent paths).
+- **File names:** {{KEBAB_CASE_OR_OTHER}}.
+
+## 4. Common gotchas
+
+<!-- Non-obvious behaviors. Mark unverifiable ones with TODO so the maintainer can confirm. -->
+
+- {{GOTCHA_1}}
+- {{GOTCHA_2}} <!-- TODO: ask the maintainer to confirm -->
+- {{GOTCHA_3}}
+
+## 5. Running locally
+
+- **Runtime:** {{NODE_VERSION_OR_PYTHON_ETC}}.
+- **Setup:** see [`{{LOCAL_SETUP_DOC_OR_README_SECTION}}`]({{LOCAL_SETUP_LINK}}).
+- **Dev server:** `{{DEV_COMMAND}}`.
+
+## 6. Testing
+
+- **Runner:** {{VITEST_OR_JEST_OR_PYTEST}} — `{{TEST_COMMAND}}`.
+- **Tests:** `{{TEST_DIR}}`.
+
+## 7. Changelog conventions
+
+<!-- If the repo has changelogs. Otherwise delete this section. -->
+
+{{CHANGELOG_NOTES_OR_DELETE_SECTION}}
+
+## 8. Deployment
+
+<!-- One paragraph or table. Point to existing CI config and docs instead of duplicating them. -->
+
+{{DEPLOYMENT_SUMMARY_AND_LINK}}
+
+## 9. Code graph (optional)
+
+<!-- Keep only if `code-review-graph` or another MCP code-graph server is in use. Otherwise delete this section. -->
+
+A local code-knowledge-graph MCP server (e.g. `code-review-graph`) can be installed per-developer to answer navigation questions ("what calls X?", "where is Y defined?"). It is **not** required and nothing in this repo depends on it. See `docs/agent-context/README.md` for setup notes.

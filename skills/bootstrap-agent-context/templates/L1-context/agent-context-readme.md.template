@@ -1,0 +1,45 @@
+# Agent Context System
+
+A three-layer system that gives AI coding agents fast, accurate orientation in this repo so they can start coding immediately instead of grepping a thousand files.
+
+## The three layers
+
+| Layer | Location | What it does | Token cost |
+| --- | --- | --- | --- |
+| **Intent** | [`AGENTS.md`](../../AGENTS.md) | High-level architecture, conventions, gotchas — always loaded | Always on |
+| **Per-context guidance** | [`.cursor/rules/*.mdc`](../../.cursor/rules) | Glob-scoped rules (e.g. only loaded when editing matching files) | Loaded only when matching files are open |
+| **On-demand recipes** | [`.cursor/skills/*`](../../.cursor/skills) | Step-by-step skills the agent reads when its description matches | Loaded only when invoked |
+{{OPTIONAL_SCHEMA_MAP_ROW}}
+
+## Quickstart for a new task
+
+1. **Open the file you'll edit.** Cursor automatically loads `AGENTS.md` and any `.cursor/rules/*.mdc` whose `globs:` match.
+2. **Describe the task.** The agent has the conventions in scope; it does not need to grep for them.
+3. **Drafting.** Agent proposes the change against the relevant rule's conventions.
+4. **Verify.** {{LINT_AND_TEST_COMMAND}}.
+
+## How to extend
+
+| You want to... | Do this |
+| --- | --- |
+| Add a new convention scoped to a folder | Create `.cursor/rules/<topic>.mdc` with frontmatter `description` + `globs:` |
+| Add a step-by-step recipe agents can invoke | Create `.cursor/skills/<name>/SKILL.md` with frontmatter `description` |
+| Mark a path as "do not touch" | Add it to [`.cursor/rules/no-go-zones.mdc`](../../.cursor/rules/no-go-zones.mdc) |
+{{OPTIONAL_SCHEMA_MAP_EXTEND_ROWS}}
+
+Always-on rules cost from a shared instruction budget — keep them tight. The "would removing this line cause a mistake the agent wouldn't otherwise make?" test is the gate.
+
+## How to measure token savings (optional)
+
+Token reduction is the whole point. There's a measurement protocol skeleton in [`validation-template.md`](validation-template.md) — baseline run with rules/skills disabled vs. pipeline run with them enabled, on a representative seed task. Acceptance bar: **≥ 50% reduction in conversation tokens**.
+
+If you re-validate after meaningful changes (new rules, schema growth, bigger curated docs), commit a fresh `validation-YYYY-MM.md` next to this file.
+
+## What's intentionally NOT here
+
+- No subagent role configs.
+- No git-worktree workflow.
+- No CI gates beyond what already exists.
+- No commits of `.cursor/mcp.json` to this repo (any MCP install is personal-only, in `~/.cursor/mcp.json`).
+
+These are revisitable later if the curated layer pays off and there's a clear gap.

@@ -1,0 +1,44 @@
+<!--
+pipeline: convoy=<slug>, brief=<N>
+skip: <comma-separated flags or empty>
+
+Skip flags (Conductor sets these — do not edit by hand):
+  ia, ux, arch, test, review, visual, a11y, design, smoke, qa, docs, flag
+Never skip: plan-approval, pr-merge, prod-promote
+-->
+
+## Summary
+
+<!-- 2-3 bullets: what changed and why. User-facing language preferred. -->
+
+## Convoy + Brief
+
+- Convoy: `.convoys/<slug>.md`
+- Brief: `.convoys/<slug>/brief-<N>-...md`
+
+## Acceptance criteria
+
+<!-- Copy from the brief; check off as you complete. -->
+
+- [ ]
+- [ ]
+- [ ] No scope expansion (only files listed in the brief's `files:` were edited)
+
+## Test plan
+
+<!-- What was tested, how, and what wasn't tested with rationale. -->
+
+## Pipeline gates
+
+<!-- Filled in by CI / role-reviewer. Don't edit. -->
+
+- [ ] CI: lint, types, build, unit tests
+- [ ] Visual diff (if UI change)
+- [ ] A11y audit (if UI change)
+- [ ] Design-system audit (if UI change)
+- [ ] Reviewer report
+- [ ] Smoke on staging (after merge to develop)
+
+## Notes for reviewer
+
+<!-- Anything unusual, intentional trade-offs, or follow-ups. -->

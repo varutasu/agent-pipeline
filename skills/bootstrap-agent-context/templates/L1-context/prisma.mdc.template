@@ -1,0 +1,64 @@
+---
+description: Prisma schema and database access conventions
+globs: "prisma/**,{{API_GLOB}},{{LIB_GLOB}}"
+---
+
+# Prisma Conventions
+
+<!--
+Bootstrap note: VERIFY before keeping.
+- Confirm `lib/prisma.ts` (or equivalent singleton) actually exists. If the
+  repo instantiates `new PrismaClient()` directly, rewrite this section to
+  describe the real pattern.
+- Read `prisma/schema.prisma` and check whether models actually use
+  `cuid()`, `@@map`, etc. Drop bullets that are aspirational rather than
+  actual.
+-->
+
+## Client import
+
+Always import the singleton client:
+
+```ts
+import { prisma } from '{{PRISMA_IMPORT_PATH_E_G_@/lib/prisma}}'
+```
+
+Never instantiate `new PrismaClient()` outside of `{{PRISMA_SINGLETON_FILE}}`.
+
+## Schema patterns
+
+<!-- Verify each bullet against this repo's schema.prisma before keeping. -->
+
+- **IDs**: `String @id @default(cuid())` — every model uses cuid.
+- **Timestamps**: include `createdAt DateTime @default(now())` and `updatedAt DateTime @updatedAt`.
+- **Table mapping**: every model has `@@map("snake_case_plural")`.
+- **Index hints**: add `@@index` for foreign keys and frequently filtered columns.
+- **Enums**: PascalCase name, UPPER_SNAKE values.
+- **Relations**: explicit `@relation` names when a model has multiple relations to the same table.
+
+## After schema changes
+
+```bash
+npx prisma generate
+```
+
+Then create a migration if the change affects the database:
+
+```bash
+npx prisma migrate dev --name descriptive_name
+```
+
+## Query best practices
+
+- Use `select` or `include` to avoid over-fetching.
+- Use `findUnique` for single-record lookups by ID or unique field.
+- Prefer `createMany` / `updateMany` for batch operations.
+- Wrap multi-step writes in `prisma.$transaction()`.
+
+## Enums in TypeScript
+
+Import generated enums directly:
+
+```ts
+import { {{EXAMPLE_ENUM_NAMES}} } from '@prisma/client'
+```

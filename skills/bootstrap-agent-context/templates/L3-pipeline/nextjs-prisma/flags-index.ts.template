@@ -1,0 +1,77 @@
+/**
+ * Feature flag wrapper. Lightweight, dependency-free, env-var driven.
+ *
+ * Usage:
+ *   import { isEnabled } from '@/lib/flags';
+ *   if (isEnabled('bookmark_count_badge', { userId: session?.user?.id })) {
+ *     // ...
+ *   }
+ *
+ * Flag values are resolved from env vars: FLAG_<UPPER_SNAKE_NAME>=on|off|<percent>|<comma list of user ids>
+ * Examples:
+ *   FLAG_BOOKMARK_COUNT_BADGE=on            # everyone
+ *   FLAG_BOOKMARK_COUNT_BADGE=off           # nobody
+ *   FLAG_BOOKMARK_COUNT_BADGE=10            # 10% of users (deterministic per userId)
+ *   FLAG_BOOKMARK_COUNT_BADGE=u1,u2,u3      # specific user ids
+ *
+ * For richer flag systems (LaunchDarkly, Statsig, Unleash, etc.) replace the
+ * resolver below with an SDK call. The public API (`isEnabled`) stays the same.
+ *
+ * Pipeline integration: convoys with `skip: flag` in their frontmatter ship
+ * without flag-gating. Convoys without `skip: flag` MUST gate the new code
+ * behind a flag and document the rollout plan in the convoy file.
+ */
+
+type FlagContext = {
+  userId?: string | null;
+  /** Optional override — useful for tests. */
+  envValue?: string;
+};
+
+const KNOWN_FLAGS = new Set<string>([
+  // Add flags here as they're created. Helps catch typos.
+  // 'bookmark_count_badge',
+]);
+
+function envName(flag: string): string {
+  return `FLAG_${flag.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
+}
+
+function hashUserId(userId: string, salt: string): number {
+  let h = 0;
+  const s = `${salt}::${userId}`;
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 31 + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h) % 100;
+}
+
+export function isEnabled(flag: string, ctx: FlagContext = {}): boolean {
+  if (process.env.NODE_ENV !== 'test' && !KNOWN_FLAGS.has(flag)) {
+    if (typeof console !== 'undefined') {
+      console.warn(`[flags] unknown flag '${flag}'. Add it to KNOWN_FLAGS in lib/flags/index.ts.`);
+    }
+  }
+
+  const raw = (ctx.envValue ?? process.env[envName(flag)] ?? 'off').trim().toLowerCase();
+
+  if (raw === 'on' || raw === 'true' || raw === '1') return true;
+  if (raw === 'off' || raw === 'false' || raw === '0' || raw === '') return false;
+
+  const pct = Number(raw);
+  if (!Number.isNaN(pct) && pct >= 0 && pct <= 100) {
+    if (!ctx.userId) return false; // no user context, no rollout
+    return hashUserId(ctx.userId, flag) < pct;
+  }
+
+  if (raw.includes(',') || raw.length > 0) {
+    const ids = raw.split(',').map((s) => s.trim()).filter(Boolean);
+    return Boolean(ctx.userId && ids.includes(ctx.userId));
+  }
+
+  return false;
+}
+
+export function listKnownFlags(): string[] {
+  return [...KNOWN_FLAGS].sort();
+}

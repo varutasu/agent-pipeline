@@ -1,0 +1,79 @@
+name: Preview smoke
+
+on:
+  pull_request:
+    branches: [develop, main]
+    types: [labeled, opened, synchronize, reopened]
+
+# Only run when:
+# - The PR has the 'preview-ready' label, OR
+# - The PR body / commits do not contain 'pipeline:.*skip.*smoke'
+#
+# Skip semantics: convoy-classified docs/infra/config-only PRs add 'skip: smoke'
+# to the body and this job no-ops via the gate step below.
+
+concurrency:
+  group: preview-smoke-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: Should run?
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Decide
+        id: check
+        run: |
+          if echo "${{ github.event.pull_request.body }}" | grep -qE 'pipeline:.*skip.*\bsmoke\b'; then
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "::notice::Smoke skipped via pipeline directive"
+          else
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          fi
+
+  smoke:
+    name: Playwright smoke
+    needs: gate
+    if: needs.gate.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Set this in repo secrets/vars to your preview URL pattern, e.g.
+      # https://pr-${{ github.event.pull_request.number }}.preview.example.com
+      PREVIEW_URL: ${{ vars.PREVIEW_URL_PATTERN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - name: Wait for preview to respond
+        run: |
+          PREVIEW="${PREVIEW_URL//\$\{PR\}/${{ github.event.pull_request.number }}}"
+          for i in {1..30}; do
+            if curl -fsS "$PREVIEW" > /dev/null; then
+              echo "Preview ready at $PREVIEW"
+              echo "PREVIEW_RESOLVED=$PREVIEW" >> $GITHUB_ENV
+              exit 0
+            fi
+            echo "Waiting for preview ($i/30)..."
+            sleep 10
+          done
+          echo "::error::Preview never responded at $PREVIEW"
+          exit 1
+      - name: Run smoke tests
+        run: npx playwright test --project=smoke
+        env:
+          BASE_URL: ${{ env.PREVIEW_RESOLVED }}
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

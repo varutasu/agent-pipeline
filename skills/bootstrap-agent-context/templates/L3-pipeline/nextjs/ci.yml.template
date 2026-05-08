@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  lint-types-build:
+    name: Lint, types, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Build
+        run: npm run build
+        env:
+          NEXTAUTH_SECRET: ci-secret-only-for-build
+          NEXTAUTH_URL: http://localhost:3000
+
+  test:
+    name: Unit + integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run test:run
+        env:
+          NEXTAUTH_SECRET: ci-secret-only-for-tests
+          NEXTAUTH_URL: http://localhost:3000

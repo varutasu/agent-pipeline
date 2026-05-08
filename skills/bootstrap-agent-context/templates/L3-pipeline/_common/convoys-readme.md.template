@@ -1,0 +1,99 @@
+# Convoys
+
+A **convoy** is a multi-PR work-stream coordinated by an agent pipeline. One convoy = one feature, bug fix, or epic. Each convoy is a Markdown file in this directory plus an optional sub-directory of implementer briefs.
+
+## File layout
+
+```
+.convoys/
+├── README.md                              (this file)
+├── <slug>.md                              (the convoy file — written by role-conductor)
+└── <slug>/
+    ├── brief-1-<kebab-title>.md           (written by role-architect)
+    ├── brief-2-<kebab-title>.md
+    └── ...
+```
+
+## Convoy file format
+
+Frontmatter (set by `role-conductor`, then appended-to by other roles):
+
+```yaml
+---
+name: <kebab-slug>
+classification: feature | hotfix | docs-only | infra-only | server-only | config-only
+success_metric: <one sentence>
+skip:
+  - <flag1>
+status: open | in-progress | merged | shipped | abandoned
+created: <YYYY-MM-DD>
+---
+```
+
+Body sections (added in order by the pipeline roles):
+
+1. `## Why` (Conductor)
+2. `## Scope` (Conductor)
+3. `## Roles invoked` (Conductor)
+4. `## Todos` (Conductor → refined by Architect)
+5. `## IA` (IA Architect)
+6. `## UX` (UX Reviewer)
+7. `## Architecture` (Architect)
+
+After Architect, briefs live in `.convoys/<slug>/brief-N-*.md`. Implementers read only their brief, not the whole convoy.
+
+## Skip flags
+
+The Conductor sets `skip:` based on classification. These flags map to pipeline stages that no-op when set:
+
+| Flag | Skips |
+| --- | --- |
+| `ia` | IA Architect |
+| `ux` | UX Reviewer |
+| `arch` | Architect |
+| `test` | Component tests |
+| `review` | Reviewer |
+| `visual` | Visual diff |
+| `a11y` | A11y auditor |
+| `design` | Design-system auditor |
+| `smoke` | Staging smoke |
+| `qa` | Manual QA |
+| `docs` | Doc Writer |
+| `flag` | Flag rollout |
+
+Never skipped (mandatory human gates): `plan-approval`, `pr-merge`, `prod-promote`.
+
+## Status lifecycle
+
+- `open` — Conductor created the convoy; no work started.
+- `in-progress` — At least one brief has an open or merged PR.
+- `merged` — All briefs merged to umbrella; release PR to develop pending.
+- `shipped` — Release to main complete; flag rollout (if any) underway.
+- `abandoned` — Convoy closed without shipping; reason in convoy body.
+
+Update status by editing the convoy frontmatter as you progress.
+
+## Adding a new convoy
+
+1. Open Cursor in this repo.
+2. Prompt: *"Start a new convoy: <one-paragraph idea>. Success = <metric>."*
+3. The `role-conductor` subagent writes `.convoys/<slug>.md`.
+4. Run subsequent roles in order per the convoy's `Roles invoked` list.
+
+See `.cursor/agents/role-conductor.md` for the Conductor's full spec.
+
+## Self-analytics
+
+Each L2 role appends one event to `.convoys/.metrics.jsonl` via `scripts/log-convoy-event.sh`. The file is gitignored by default — events stay local. To opt-in to commit team-shared metrics, remove `.convoys/.metrics.jsonl` from `.gitignore`.
+
+Aggregate across repos and render a dashboard with the [agent-pipeline analytics scripts](https://github.com/varutasu/agent-pipeline/tree/main/analytics):
+
+```bash
+cd ~/code/agent-pipeline/analytics
+npx tsx analyze-convoys.ts <repo-path> [<repo-path>...]
+npx tsx render-dashboard.ts
+open ~/agent-pipeline-data/dashboard.html
+```
+
+Schema: [`analytics/schemas/convoy-event.json`](https://github.com/varutasu/agent-pipeline/blob/main/analytics/schemas/convoy-event.json).
+

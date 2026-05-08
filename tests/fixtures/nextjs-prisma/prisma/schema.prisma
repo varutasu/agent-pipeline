@@ -1,0 +1,52 @@
+// Minimal fixture schema for testing scripts/generate-schema-map.ts.
+// Real apps will have many more models; this is the smallest schema that
+// exercises model parsing, enum parsing, relations, and @@map directives.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  posts     Post[]
+  createdAt DateTime @default(now())
+
+  @@map("users")
+}
+
+model Post {
+  id        String     @id @default(cuid())
+  title     String
+  body      String
+  status    PostStatus @default(DRAFT)
+  authorId  String
+  author    User       @relation(fields: [authorId], references: [id])
+  createdAt DateTime   @default(now())
+
+  @@index([authorId])
+  @@map("posts")
+}
+
+model Tag {
+  id   String @id @default(cuid())
+  name String @unique
+}

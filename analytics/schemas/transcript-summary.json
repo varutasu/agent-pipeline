@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/varutasu/agent-pipeline/analytics/schemas/transcript-summary.json",
+  "title": "TranscriptSummary",
+  "description": "One JSONL row written by extract-transcripts.ts for each Cursor chat transcript processed.",
+  "type": "object",
+  "required": ["chat_id", "workspace", "started_at"],
+  "additionalProperties": false,
+  "properties": {
+    "chat_id": { "type": "string" },
+    "workspace": { "type": "string", "description": "Cursor workspace name (basename of the project folder)" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "ended_at": { "type": ["string", "null"], "format": "date-time" },
+    "duration_s": { "type": ["integer", "null"], "minimum": 0 },
+    "model": { "type": ["string", "null"] },
+    "input_tokens_total": { "type": "integer", "minimum": 0 },
+    "output_tokens_total": { "type": "integer", "minimum": 0 },
+    "cache_read_tokens": { "type": "integer", "minimum": 0 },
+    "cache_creation_tokens": { "type": "integer", "minimum": 0 },
+    "tool_calls_by_name": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "mcp_calls": { "type": "integer", "minimum": 0 },
+    "user_prompts": { "type": "integer", "minimum": 0 },
+    "assistant_messages": { "type": "integer", "minimum": 0 }
+  }
+}

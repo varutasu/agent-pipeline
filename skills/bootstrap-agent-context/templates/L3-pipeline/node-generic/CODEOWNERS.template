@@ -1,0 +1,14 @@
+# CODEOWNERS — review routing for the agent pipeline.
+# Replace @YOUR-GITHUB-HANDLE with your GitHub handle or team.
+
+# Global default
+*                                              @YOUR-GITHUB-HANDLE
+
+# CI / infra
+.github/workflows/**                           @YOUR-GITHUB-HANDLE
+Dockerfile*                                    @YOUR-GITHUB-HANDLE
+
+# Agent context
+.cursor/agents/**                              @YOUR-GITHUB-HANDLE
+.cursor/rules/**                               @YOUR-GITHUB-HANDLE
+AGENTS.md                                      @YOUR-GITHUB-HANDLE

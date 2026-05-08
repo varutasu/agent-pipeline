@@ -1,0 +1,54 @@
+---
+description: Files and directories agents must not edit, and should not use as context examples
+alwaysApply: true
+---
+
+# No-go zones
+
+Do not edit, refactor, or quote as context examples. If you think you need to change one of these, stop and ask.
+
+<!--
+Bootstrap note: customize each section to this repo. Drop sections that don't
+apply, and add stack-specific paths. Common adjustments:
+- TypeScript: keep `*.tsbuildinfo`, `next-env.d.ts` if Next.js
+- Python: add `__pycache__/`, `.pytest_cache/`, `*.egg-info/`
+- Rust: add `target/`
+- Go: add `vendor/` if used
+-->
+
+## Generated / vendored
+
+- `node_modules/` — generated dependency tree
+- `dist/`, `build/` — build outputs
+- `*.tsbuildinfo` — TS incremental cache
+<!-- Add framework-specific build outputs here, e.g. `.next/`, `.svelte-kit/`, `.nuxt/`, `target/`, `__pycache__/`. -->
+
+## Append-only / historical
+
+- `prisma/migrations/` — append-only; create **new** migrations, never edit existing ones <!-- Drop if no Prisma -->
+- `CHANGELOG-ARCHIVE.md` — frozen historical log <!-- Drop if no archive -->
+<!-- Add `backups/`, `*-backup-*/`, etc. that exist in this repo. -->
+
+## Secrets / credentials
+
+- `.env`, `.env.local`, `.env.development.local`, `.env.test.local`, `.env.production.local`
+- `credentials/`, `*-service-account-key.json`, `google-credentials.json`
+- `certs/`, `*.pem`, `*.key`
+<!-- Add any repo-specific secret paths discovered during stack detection. -->
+
+## Vendored data / binaries
+
+<!-- List any binaries or vendored data files at the repo root. Examples: `cloud-sql-proxy`, large `.csv` dumps, model weight files. Delete this section if none. -->
+
+## Local-only / per-developer
+
+- `.code-review-graph/` — local MCP graph index (only if `code-review-graph` is installed)
+- `.worktrees/` — local worktree orchestration <!-- Keep only if applicable -->
+
+## Editing rules of thumb
+
+<!-- 2-4 bullets, repo-specific. Examples to adapt:
+- New Prisma migrations only: `npx prisma migrate dev --name <descriptive_name>`. Never hand-edit a previous migration's SQL.
+- New changelog entries go under `[Unreleased]` in `CHANGELOG.md`.
+- If you find yourself wanting to "fix" a generated artifact, regenerate it via the proper command instead.
+-->

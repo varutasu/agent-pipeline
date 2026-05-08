@@ -1,0 +1,32 @@
+# Editor + OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Analytics output (local only — never commit)
+analytics/dist/
+analytics/output/
+*.dashboard.html
+
+# Smoke-test artifacts (cleaned at end of run)
+tests/_run/
+tests/fixtures/**/AGENTS.md
+tests/fixtures/**/.cursor/
+tests/fixtures/**/.github/
+tests/fixtures/**/.convoys/
+tests/fixtures/**/docs/SCHEMA_MAP.md
+tests/fixtures/**/scripts/generate-schema-map.ts
+tests/fixtures/**/scripts/wt.sh
+tests/fixtures/**/lib/
+
+# Per-machine install marker (lives in $HOME, not here, but defensive)
+.agent-pipeline-install

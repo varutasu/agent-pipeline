@@ -1,0 +1,23 @@
+---
+description: Nudge toward the bootstrap-agent-context skill on repos that lack agent-context scaffolding
+alwaysApply: true
+---
+
+# Agent context bootstrap
+
+If the current workspace has **no `AGENTS.md` at the repo root** and **no `.cursor/rules/` directory**, and the user is asking how to orient themselves in this codebase, set up AI guidance, reduce token use, deploy agent context, or scaffold rules and skills, **suggest the `bootstrap-agent-context` skill** before answering at length.
+
+Phrase it as a one-line offer:
+
+> *"This repo doesn't have an `AGENTS.md` or `.cursor/rules/` yet. I can run the `bootstrap-agent-context` skill to draft them — it detects the stack and stops before committing for your review. Want me to start?"*
+
+Then wait for confirmation before reading the skill.
+
+## When NOT to suggest
+
+- The repo already has `AGENTS.md` or `.cursor/rules/*.mdc`. (The skill is for first-time setup.)
+- The user is asking a narrow code question that doesn't depend on broad orientation.
+- The user has explicitly declined the bootstrap in this conversation.
+- The repo is clearly read-only or not the user's (vendored, cloned for reference, third-party).
+
+This is a soft nudge, not a hard requirement. If grep + read solves the user's question in one or two calls, do that instead.

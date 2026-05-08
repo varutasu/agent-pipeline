@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>agent-pipeline · dashboard</title>
+<style>
+  :root {
+    --fg: #1a1a1a;
+    --muted: #666;
+    --bg: #fafafa;
+    --card: #fff;
+    --border: #e5e5e5;
+    --accent: #3a7afe;
+    --warn: #d97706;
+    --good: #059669;
+    --bad: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fg: #f1f1f1;
+      --muted: #999;
+      --bg: #1a1a1a;
+      --card: #242424;
+      --border: #333;
+      --accent: #7aa9ff;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.5;
+  }
+  h1 { font-size: 24px; margin: 0 0 4px 0; }
+  .meta { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .card h2 { font-size: 14px; font-weight: 600; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  .stat { font-size: 28px; font-weight: 600; }
+  .stat .label { font-size: 13px; font-weight: normal; color: var(--muted); margin-left: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar { background: var(--accent); height: 8px; border-radius: 2px; }
+  .bar-bg { background: var(--border); border-radius: 2px; height: 8px; overflow: hidden; }
+  details { margin-top: 16px; }
+  summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+  .signal-good { color: var(--good); }
+  .signal-warn { color: var(--warn); }
+  .signal-bad  { color: var(--bad); }
+  .full-width { grid-column: 1 / -1; }
+  pre { font-size: 12px; overflow-x: auto; padding: 12px; background: var(--bg); border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>agent-pipeline · dashboard</h1>
+<div class="meta">Generated <!--GENERATED_AT--></div>
+
+<div class="grid">
+
+  <div class="card">
+    <h2>Convoys</h2>
+    <div class="stat"><!--CONVOY_COUNT--><span class="label">across <!--REPO_COUNT--> repo(s)</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Convoy events</h2>
+    <div class="stat"><!--EVENT_COUNT--><span class="label">role invocations</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Cursor chats mined</h2>
+    <div class="stat"><!--CHAT_COUNT--><span class="label">total tokens <!--TOTAL_TOKENS--></span></div>
+  </div>
+
+  <div class="card">
+    <h2>MCP usage</h2>
+    <div class="stat"><!--MCP_CALLS--><span class="label">MCP tool calls (<!--MCP_PCT-->% of all)</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Role usage</h2>
+    <table><thead><tr><th>Role</th><th class="num">Events</th></tr></thead><tbody>
+    <!--ROLES_TABLE-->
+    </tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>Classification mix</h2>
+    <table><thead><tr><th>Type</th><th class="num">Count</th></tr></thead><tbody>
+    <!--CLASS_TABLE-->
+    </tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>Skip flags (most-used)</h2>
+    <table><thead><tr><th>Flag</th><th class="num">Times set</th></tr></thead><tbody>
+    <!--SKIPS_TABLE-->
+    </tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>Median role duration</h2>
+    <table><thead><tr><th>Role</th><th class="num">Sec</th></tr></thead><tbody>
+    <!--DURATION_TABLE-->
+    </tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>Tool call mix (transcripts)</h2>
+    <table><thead><tr><th>Tool</th><th class="num">Calls</th></tr></thead><tbody>
+    <!--TOOLS_TABLE-->
+    </tbody></table>
+  </div>
+
+  <div class="card full-width">
+    <h2>Self-optimization signals</h2>
+    <ul>
+    <!--SIGNALS-->
+    </ul>
+  </div>
+
+  <div class="card full-width">
+    <h2>Recent convoys</h2>
+    <table><thead><tr>
+      <th>Repo</th><th>Convoy</th><th>Class</th><th>Roles</th><th class="num">Total s</th><th>Started</th>
+    </tr></thead><tbody>
+    <!--CONVOYS_TABLE-->
+    </tbody></table>
+  </div>
+
+</div>
+
+<details>
+  <summary>Raw rollup (JSON)</summary>
+  <pre><!--RAW_JSON--></pre>
+</details>
+
+</body>
+</html>

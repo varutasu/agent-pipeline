@@ -1,0 +1,66 @@
+---
+description: Conventions for {{FRAMEWORK}} API route handlers
+globs: {{API_GLOB_E_G_app/api/**/*.ts}}
+---
+
+# API Route Conventions
+
+<!--
+Bootstrap note: VERIFY each section against the actual repo before keeping.
+- Read the real auth helper file (e.g. `lib/api-utils.ts` or `lib/auth.ts`)
+  and rewrite the imports to match.
+- If the repo doesn't have a centralized `requireAuth` helper, drop the
+  "Authentication & Authorization" section or replace it with what the repo
+  actually does (e.g. NextAuth `auth()` directly, raw `getServerSession`,
+  middleware-based, etc.).
+- If the repo doesn't use Zod, drop the validation section or swap for the
+  real validator (yup, valibot, manual checks, etc.).
+-->
+
+## Authentication & Authorization
+
+- {{AUTH_IMPORT_LINE}}
+- {{ERROR_HELPERS_IMPORT_LINE}}
+- {{HOW_REQUIRE_AUTH_RETURNS_AND_IS_USED}}
+
+```ts
+{{AUTH_USAGE_EXAMPLE}}
+```
+
+## Request validation
+
+- Use **{{VALIDATOR}}** for all request body and query-parameter validation.
+- Define schemas at the top of the file alongside imports.
+
+```ts
+{{VALIDATION_USAGE_EXAMPLE}}
+```
+
+## Error handling
+
+- Wrap every handler body in `try/catch`.
+- Return {{REPO_SPECIFIC_ERROR_HELPER}} (or a specific message) in the catch block — never throw unhandled.
+
+```ts
+export async function GET(request: NextRequest) {
+  try {
+    // ...handler logic
+  } catch (err) {
+    console.error('[GET /api/example]', err)
+    return {{ERROR_HELPER}}
+  }
+}
+```
+
+## Database access
+
+<!-- Drop or rewrite based on detected ORM. -->
+
+- Import {{DB_CLIENT}} from `{{DB_CLIENT_PATH}}`.
+- Use `select` or `include` to avoid over-fetching.
+
+## Response shape
+
+- Success: `{{SUCCESS_RESPONSE_SHAPE}}`
+- Created: `{{CREATED_RESPONSE_SHAPE}}`
+- Errors: always `{ error: string, details?: unknown }` via the helpers above.

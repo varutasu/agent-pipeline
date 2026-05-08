@@ -1,0 +1,22 @@
+# CODEOWNERS — review routing for the agent pipeline.
+# Replace @YOUR-GITHUB-HANDLE with your GitHub handle or team.
+
+# Global default
+*                                              @YOUR-GITHUB-HANDLE
+
+# High-risk: auth, money, infra
+auth.ts                                        @YOUR-GITHUB-HANDLE
+lib/auth-options.ts                            @YOUR-GITHUB-HANDLE
+lib/auth/**                                    @YOUR-GITHUB-HANDLE
+middleware.ts                                  @YOUR-GITHUB-HANDLE
+lib/flags/**                                   @YOUR-GITHUB-HANDLE
+
+# CI / infra
+.github/workflows/**                           @YOUR-GITHUB-HANDLE
+Dockerfile*                                    @YOUR-GITHUB-HANDLE
+next.config.*                                  @YOUR-GITHUB-HANDLE
+
+# Agent context
+.cursor/agents/**                              @YOUR-GITHUB-HANDLE
+.cursor/rules/**                               @YOUR-GITHUB-HANDLE
+AGENTS.md                                      @YOUR-GITHUB-HANDLE

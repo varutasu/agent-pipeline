@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/varutasu/agent-pipeline/analytics/schemas/convoy-event.json",
+  "title": "ConvoyEvent",
+  "description": "One JSONL row appended to <repo>/.convoys/.metrics.jsonl by an L2 role.",
+  "type": "object",
+  "required": ["ts", "role", "convoy", "repo"],
+  "additionalProperties": false,
+  "properties": {
+    "ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of role invocation"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "role-conductor",
+        "role-ia-architect",
+        "role-ux-reviewer",
+        "role-architect",
+        "role-implementer",
+        "role-reviewer",
+        "role-design-system-auditor",
+        "role-a11y-auditor",
+        "role-doc-writer"
+      ]
+    },
+    "convoy": { "type": "string", "description": "Convoy slug (matches .convoys/<slug>.md)" },
+    "brief": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "Brief number, present only for implementer/reviewer events"
+    },
+    "classification": {
+      "type": ["string", "null"],
+      "enum": [null, "feature", "hotfix", "docs-only", "infra-only", "server-only", "config-only"],
+      "description": "Set by conductor on first event for a convoy"
+    },
+    "skip_flags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Skip flags as set by the conductor"
+    },
+    "duration_s": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Wall-clock duration of the role invocation, in seconds"
+    },
+    "stack_class": {
+      "type": ["string", "null"],
+      "enum": [null, "nextjs-prisma", "nextjs", "node-generic", "non-node", "other"],
+      "description": "Set by the bootstrap skill at install; carried in conductor events"
+    },
+    "repo": { "type": "string", "description": "git repo name; resolved from `git rev-parse --show-toplevel` basename" },
+    "outcome": {
+      "type": ["string", "null"],
+      "enum": [null, "complete", "blocked", "abandoned"],
+      "description": "Optional terminal outcome (for retrospective tagging)"
+    }
+  }
+}
