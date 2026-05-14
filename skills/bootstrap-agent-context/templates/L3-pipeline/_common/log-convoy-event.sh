@@ -10,11 +10,23 @@
 #
 # All args are key=value. Required: role, convoy.
 # Optional: brief, classification, skip_flags (comma-separated), duration_s,
-#           stack_class, outcome.
+#           stack_class, outcome, multitask_group.
+#
+# multitask_group: cohort id when this role ran as part of a Cursor 3.2
+# /multitask fan-out (e.g. 'audit-bookmark-badge-PR123'). Events sharing
+# this id should be aggregated with max(duration_s), not sum, for wall-clock.
+# See docs/multitask-playbook.md.
 #
 # Privacy: this file is gitignored by default; events contain only metadata,
 # no code or prompts. To opt-in to commit, remove `.convoys/.metrics.jsonl`
 # from your `.gitignore`.
+#
+# Atomicity: concurrent invocations append safely because each python3
+# subprocess writes one short JSON line via O_APPEND. POSIX guarantees
+# writes <= PIPE_BUF are atomic on regular files opened with O_APPEND.
+# Typical line size is 200-400 bytes; PIPE_BUF is 4096 on Linux and
+# 512+ on macOS. Larger custom fields could break this — keep
+# multitask_group <= 64 chars (matches the JSON schema).
 #
 # Portable across macOS bash 3.2 and Linux bash 4+; uses python3 (always
 # present on macOS + most Linux) for safe JSON encoding.
@@ -28,20 +40,21 @@ mkdir -p "$REPO_ROOT/.convoys"
 
 # Pull values out of args without using associative arrays (bash 3.2 compat)
 ROLE=""; CONVOY=""; BRIEF=""; CLASSIFICATION=""
-SKIP_FLAGS=""; DURATION_S=""; STACK_CLASS=""; OUTCOME=""
+SKIP_FLAGS=""; DURATION_S=""; STACK_CLASS=""; OUTCOME=""; MULTITASK_GROUP=""
 
 for arg in "$@"; do
   k="${arg%%=*}"
   v="${arg#*=}"
   case "$k" in
-    role)            ROLE="$v" ;;
-    convoy)          CONVOY="$v" ;;
-    brief)           BRIEF="$v" ;;
-    classification)  CLASSIFICATION="$v" ;;
-    skip_flags)      SKIP_FLAGS="$v" ;;
-    duration_s)      DURATION_S="$v" ;;
-    stack_class)     STACK_CLASS="$v" ;;
-    outcome)         OUTCOME="$v" ;;
+    role)             ROLE="$v" ;;
+    convoy)           CONVOY="$v" ;;
+    brief)            BRIEF="$v" ;;
+    classification)   CLASSIFICATION="$v" ;;
+    skip_flags)       SKIP_FLAGS="$v" ;;
+    duration_s)       DURATION_S="$v" ;;
+    stack_class)      STACK_CLASS="$v" ;;
+    outcome)          OUTCOME="$v" ;;
+    multitask_group)  MULTITASK_GROUP="$v" ;;
     *) echo "log-convoy-event: ignoring unknown arg '$k'" >&2 ;;
   esac
 done
@@ -64,11 +77,12 @@ ev = {
     "repo": $(printf '%s' "$REPO_NAME" | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read()))'),
     "skip_flags": [s for s in "$SKIP_FLAGS".split(",") if s],
 }
-if "$BRIEF":          ev["brief"] = int("$BRIEF")
-if "$CLASSIFICATION": ev["classification"] = "$CLASSIFICATION"
-if "$DURATION_S":     ev["duration_s"] = int("$DURATION_S")
-if "$STACK_CLASS":    ev["stack_class"] = "$STACK_CLASS"
-if "$OUTCOME":        ev["outcome"] = "$OUTCOME"
+if "$BRIEF":            ev["brief"] = int("$BRIEF")
+if "$CLASSIFICATION":   ev["classification"] = "$CLASSIFICATION"
+if "$DURATION_S":       ev["duration_s"] = int("$DURATION_S")
+if "$STACK_CLASS":      ev["stack_class"] = "$STACK_CLASS"
+if "$OUTCOME":          ev["outcome"] = "$OUTCOME"
+if "$MULTITASK_GROUP":  ev["multitask_group"] = "$MULTITASK_GROUP"
 print(json.dumps(ev))
 PY
 

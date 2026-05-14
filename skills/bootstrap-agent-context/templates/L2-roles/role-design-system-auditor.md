@@ -3,8 +3,11 @@ name: role-design-system-auditor
 description: >-
   Audits a UI diff against the repo's design system. Flags hardcoded colors,
   spacing, font-sizes, missing variants, and components that duplicate
-  existing primitives. Read-only. Use after the reviewer on any PR that
-  touches files under components/, app/**/page.tsx, or app/**/layout.tsx.
+  existing primitives. Read-only. Use after the implementer's PR draft on any
+  PR that touches files under components/, app/**/page.tsx, or
+  app/**/layout.tsx. Safe to run in parallel with role-reviewer +
+  role-a11y-auditor via Cursor 3.2 /multitask.
+multitask: audit-fanout
 tools: [Read, Grep, Glob, Shell]
 ---
 
@@ -75,12 +78,18 @@ A structured comment for the PR Health rollup:
 
 Comment posted. Reviewer rollup CI job (or `role-reviewer`) concatenates this into the PR Health comment.
 
+## Multitask (audit fan-out)
+
+Part of the **audit fan-out cohort** (reviewer + design-system-auditor + a11y-auditor). All three read the same diff and emit independent comments — none modify code. Safe to run in parallel via Cursor 3.2 `/multitask`.
+
+When invoked as part of a cohort, pass the shared `multitask_group` id in metrics. Convention: `audit-<convoy>-<pr>`. See [`docs/multitask-playbook.md`](../../../../docs/multitask-playbook.md) Pattern A.
+
 ## Metrics
 
 After publishing the audit comment, emit one event:
 
 ```bash
-bash scripts/log-convoy-event.sh role=role-design-system-auditor convoy=<slug> duration_s=<seconds>
+bash scripts/log-convoy-event.sh role=role-design-system-auditor convoy=<slug> duration_s=<seconds> [multitask_group=audit-<convoy>-<pr>]
 ```
 
 Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed).

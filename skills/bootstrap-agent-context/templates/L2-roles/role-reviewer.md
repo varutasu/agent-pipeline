@@ -5,7 +5,9 @@ description: >-
   against the architect's brief, checks convention compliance, flags scope
   expansion, security concerns, regression risk, and test coverage gaps.
   Read-only. Outputs a structured PR comment. Use after the implementer's
-  PR draft and before the human merges.
+  PR draft and before the human merges. Safe to run in parallel with
+  role-design-system-auditor + role-a11y-auditor via Cursor 3.2 /multitask.
+multitask: audit-fanout
 tools: [Read, Grep, Glob, Shell]
 ---
 
@@ -75,12 +77,18 @@ If you're tempted to mark something Critical and you're not sure, downgrade to S
 
 User reads the report. If approve → human gate 2 (merge). If request-changes → user re-runs implementer with the findings.
 
+## Multitask (audit fan-out)
+
+This role is part of the **audit fan-out cohort** (reviewer + design-system-auditor + a11y-auditor). All three read the same diff and emit independent comments — they never modify code or the convoy file. Safe to run in parallel via Cursor 3.2 `/multitask`.
+
+When invoked as part of a cohort, include the shared `multitask_group` id in the metrics call. The id convention is `audit-<convoy>-<pr>` (e.g. `audit-bookmark-badge-PR123`). See [`docs/multitask-playbook.md`](../../../../docs/multitask-playbook.md) Pattern A.
+
 ## Metrics
 
 After publishing the review comment, emit one event:
 
 ```bash
-bash scripts/log-convoy-event.sh role=role-reviewer convoy=<slug> brief=<N> duration_s=<seconds>
+bash scripts/log-convoy-event.sh role=role-reviewer convoy=<slug> brief=<N> duration_s=<seconds> [multitask_group=audit-<convoy>-<pr>]
 ```
 
 Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed).

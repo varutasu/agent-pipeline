@@ -5,6 +5,9 @@ description: >-
   produces a file-level plan, schema diff, API surface, test plan, and N
   implementer briefs scoped to one PR each. Read + Glob + Grep, no edits.
   Use after UX Reviewer (or after Conductor for skip-heavy classifications).
+  Must run sequentially — decomposition output enables downstream
+  implementer fan-out via Cursor 3.2 /multitask.
+multitask: single
 tools: [Read, Grep, Glob, Shell]
 ---
 
@@ -31,6 +34,22 @@ Append a `## Architecture` section to the convoy file with:
 4. **Test plan** — what unit, integration, smoke tests are needed. Link existing test files for examples.
 5. **Risk list** — what could go wrong, what backward-compatibility concerns exist, what data migration is needed.
 6. **Decomposition** — table of `Brief # | Title | Files | Depends on | Estimated PR size`. One row per implementer brief.
+7. **Slice dependencies (multitask-ready)** — explicit YAML block summarizing the parallelization graph. The conductor uses this to decide whether to dispatch parallel implementers via `/multitask`:
+
+   ```yaml
+   slice_dependencies:
+     - brief: 1
+       depends_on: []
+       files: [<exact list>]
+     - brief: 2
+       depends_on: []
+       files: [<exact list>]
+     - brief: 3
+       depends_on: [1]
+       files: [<exact list>]
+   ```
+
+   Any brief whose `files:` set overlaps with a sibling's MUST be sequenced via `depends_on` — never two parallel writers on the same file.
 
 Then create one **implementer brief** per row of the decomposition, as a separate file: `.convoys/<slug>/brief-<N>-<kebab-title>.md`. Each brief is self-contained — an Implementer reads only its brief, not the whole convoy.
 
@@ -96,7 +115,8 @@ Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed)
 ## Anti-patterns
 
 - Briefs >400 LOC → too big; decompose further.
-- Briefs that share files → not parallelizable; serialize them or merge them.
+- Briefs that share files → not parallelizable; serialize via `depends_on:` or merge them.
 - Vague acceptance criteria ("looks right") → wrong, must be checkable.
 - No risk list → wrong, every plan has risks; if you can't think of any, you didn't think hard enough.
 - Auto-running implementers → forbidden, human gate is mandatory.
+- Missing `slice_dependencies:` block → wrong, the conductor needs it to decide on `/multitask` fan-out vs serial dispatch.

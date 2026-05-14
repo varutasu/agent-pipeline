@@ -3,9 +3,11 @@ name: role-a11y-auditor
 description: >-
   Accessibility audit on a UI diff. Checks for missing labels, keyboard
   navigation, focus management, color contrast, semantic HTML, and ARIA
-  correctness. Read-only. Use after the design-system auditor on PRs that
+  correctness. Read-only. Use after the implementer's PR draft on PRs that
   touch UI files. Does not require a browser MCP — works from the diff +
-  static analysis.
+  static analysis. Safe to run in parallel with role-reviewer +
+  role-design-system-auditor via Cursor 3.2 /multitask.
+multitask: audit-fanout
 tools: [Read, Grep, Glob, Shell]
 ---
 
@@ -80,12 +82,18 @@ A structured comment for the PR Health rollup:
 - Test screen readers manually — beyond static analysis scope.
 - Audit non-UI changes — server / API / config diffs are out of scope.
 
+## Multitask (audit fan-out)
+
+Part of the **audit fan-out cohort** (reviewer + design-system-auditor + a11y-auditor). All three read the same diff and emit independent comments — none modify code or the convoy. Safe to run in parallel via Cursor 3.2 `/multitask`.
+
+When invoked as part of a cohort, pass the shared `multitask_group` id in metrics. Convention: `audit-<convoy>-<pr>`. See [`docs/multitask-playbook.md`](../../../../docs/multitask-playbook.md) Pattern A.
+
 ## Metrics
 
 After publishing the audit comment, emit one event:
 
 ```bash
-bash scripts/log-convoy-event.sh role=role-a11y-auditor convoy=<slug> duration_s=<seconds>
+bash scripts/log-convoy-event.sh role=role-a11y-auditor convoy=<slug> duration_s=<seconds> [multitask_group=audit-<convoy>-<pr>]
 ```
 
 Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed).

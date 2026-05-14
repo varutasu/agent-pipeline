@@ -36,21 +36,16 @@ One-page summary of the 9 L2 subagent roles and the pipeline that connects them.
                  └─────────────────────────┴─────────────────────────┘
                                             │
                                             ▼  PR draft (NOT auto-opened)
-                                   ┌─────────────────┐
-                                   │  role-reviewer  │  scope check, conventions, security
-                                   └────────┬────────┘
-                                            ▼
-                  ┌─────────────────────────┴─────────────────────────┐
-                  ▼                                                   ▼
-        ┌──────────────────────────┐                        ┌──────────────────┐
-        │role-design-system-auditor│  tokens, primitives    │ (skip if non-UI) │
-        └────────┬─────────────────┘                        └─────────┬────────┘
-                 ▼                                                    │
-        ┌─────────────────┐                                           │
-        │role-a11y-auditor│  labels, keyboard, focus, semantic        │
-        └────────┬────────┘                                           │
-                 └──────────────────────────┬────────────────────────┘
-                                            ▼
+                  AUDIT FAN-OUT (Cursor 3.2 /multitask cohort):
+                  ┌─────────────────────┬──────────────────────────┬──────────────────┐
+                  ▼                     ▼                          ▼                  ▼
+        ┌─────────────────┐  ┌──────────────────────────┐  ┌─────────────────┐  (skip per
+        │  role-reviewer  │  │role-design-system-auditor│  │role-a11y-auditor│   skip flags)
+        │  scope + conv   │  │  tokens, primitives      │  │  labels, focus  │
+        └────────┬────────┘  └────────────┬─────────────┘  └────────┬────────┘
+                 │                        │                         │
+                 └────────────────────────┴─────────────────────────┘
+                                            ▼  three independent comments → PR Health rollup
                                   ★ HUMAN GATE 2: PR merge ★
                                             ▼
                                    ┌─────────────────┐
@@ -62,17 +57,19 @@ One-page summary of the 9 L2 subagent roles and the pipeline that connects them.
 
 ## The 9 roles
 
-| Role | One-line job | Output | Tools |
-| --- | --- | --- | --- |
-| **conductor** | Classify the work; write the convoy file; set skip flags | `.convoys/<slug>.md` | Read, Grep, Glob, Write |
-| **ia-architect** | Map idea to existing IA — sitemap, user flow, screens | Append `## IA` section to convoy | Read, Grep, Glob |
-| **ux-reviewer** | Reuse existing components; list a11y constraints | Append `## UX` section to convoy | Read, Grep, Glob |
-| **architect** | File plan, schema diff, API surface; decompose into N briefs | Append `## Architecture` + N `brief-N-*.md` files | Read, Grep, Glob |
-| **implementer** | Build one brief; stay strictly in scope; draft PR | Code changes + PR draft (not opened) | Read, Grep, Glob, Edit, Write, Shell |
-| **reviewer** | Self-review the diff vs the brief; structured PR comment | Markdown comment ready to paste | Read, Grep, Glob, Shell |
-| **design-system-auditor** | Token violations, duplicate primitives, inline styles | Markdown comment | Read, Grep, Glob, Shell |
-| **a11y-auditor** | Labels, keyboard, focus, contrast, semantic HTML | Markdown comment | Read, Grep, Glob, Shell |
-| **doc-writer** | Changelog, AGENTS.md updates, schema map regen | Docs PR | Read, Grep, Glob, Edit, Write, Shell |
+The `multitask` column declares each role's parallelism mode for Cursor 3.2+. See [`multitask-playbook.md`](multitask-playbook.md).
+
+| Role | One-line job | Output | Tools | Multitask |
+| --- | --- | --- | --- | --- |
+| **conductor** | Classify the work; write the convoy file; set skip flags; recommend dispatch points | `.convoys/<slug>.md` | Read, Grep, Glob, Write, Shell | `single` |
+| **ia-architect** | Map idea to existing IA — sitemap, user flow, screens | Append `## IA` section to convoy | Read, Grep, Glob, Shell | `single` |
+| **ux-reviewer** | Reuse existing components; list a11y constraints | Append `## UX` section to convoy | Read, Grep, Glob, Shell | `single` |
+| **architect** | File plan, schema diff, API surface; decompose into N briefs with `slice_dependencies:` | Append `## Architecture` + N `brief-N-*.md` files | Read, Grep, Glob, Shell | `single` |
+| **implementer** | Build one brief; stay strictly in scope; draft PR | Code changes + PR draft (not opened) | Read, Grep, Glob, Edit, Write, Shell | `per-brief` (with disjoint-files + worktree guardrails) |
+| **reviewer** | Self-review the diff vs the brief; structured PR comment | Markdown comment ready to paste | Read, Grep, Glob, Shell | `audit-fanout` |
+| **design-system-auditor** | Token violations, duplicate primitives, inline styles | Markdown comment | Read, Grep, Glob, Shell | `audit-fanout` |
+| **a11y-auditor** | Labels, keyboard, focus, contrast, semantic HTML | Markdown comment | Read, Grep, Glob, Shell | `audit-fanout` |
+| **doc-writer** | Changelog, AGENTS.md updates, schema map regen | Docs PR | Read, Grep, Glob, Edit, Write, Shell | `single` |
 
 ## Skip flags (set by Conductor)
 
@@ -91,9 +88,10 @@ The Conductor's classification drives default skips:
 
 ## Hand-off rules
 
-- **No auto-spawning.** Every role hands off by message to the user. The user invokes the next role manually (paste the role name into the chat or open a new chat).
+- **No auto-spawning.** Every role hands off by message to the user. The user invokes the next role manually (paste the role name into the chat or `/multitask` for parallel-safe cohorts).
 - **No PR opening by agents.** Implementer produces a PR draft; you open it via `gh` or Cursor's UI.
 - **No commits by Doc Writer.** Doc Writer drafts a docs PR; you open it.
+- **Human gates always apply.** `/multitask` is allowed for audit fan-out and implementer fleets, but never to skip gates 1 (plan approval), 2 (PR merge), or 3 (prod promote).
 
 ## Anti-patterns shared across roles
 

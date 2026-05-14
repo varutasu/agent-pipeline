@@ -3,9 +3,10 @@ name: role-conductor
 description: >-
   Routes a new idea through the agent-context pipeline. Owns the convoy file,
   classifies the work (feature / hotfix / docs / infra / server / config), sets
-  skip flags for stages that don't apply, and hands off to the next role. Use
-  when a new feature, bug fix, or epic is being kicked off and the work has not
-  yet been scoped.
+  skip flags for stages that don't apply, recommends multitask dispatch points
+  for downstream roles, and hands off to the next role. Use when a new feature,
+  bug fix, or epic is being kicked off and the work has not yet been scoped.
+multitask: single
 tools: [Read, Grep, Glob, Write, Shell]
 ---
 
@@ -78,6 +79,21 @@ Never set: `plan-approval`, `pr-merge`, `prod-promote` (human gates are non-nego
 ## Hand-off
 
 Hand off by message to the user, not by spawning another role automatically. The user runs the next role manually (they can paste *"role-ia-architect"* into the chat or open a new chat and reference the convoy). This keeps the human in the loop for the early stages where direction is most plastic.
+
+## Multitask dispatch recommendations
+
+The Conductor doesn't run anything in parallel itself, but it **tells the user where parallelism is safe downstream** so they can use Cursor 3.2 `/multitask` when appropriate. Include these recommendations in the hand-off summary based on the classification:
+
+| Classification | Recommended `/multitask` dispatch points |
+| --- | --- |
+| `feature` | After architect: dispatch implementers for all briefs with `depends_on: []` AND disjoint `files:` in parallel. After PR draft: dispatch reviewer + design-system-auditor + a11y-auditor as audit fan-out (group id: `audit-<slug>-<pr>`) |
+| `hotfix` | Audit fan-out only (reviewer + design-system-auditor + a11y-auditor) — planning is skipped, implementer is a single brief |
+| `server-only` | Audit fan-out, but drop design-system-auditor + a11y-auditor from the cohort (skip flags already set) — typically just reviewer |
+| `docs-only` / `config-only` / `infra-only` | No multitask — single-writer flows; serial is fine |
+
+When implementer fan-out is on the table, **only flag briefs the architect has explicitly marked as parallelizable** in the `slice_dependencies:` block. If the architect didn't supply that block, recommend serial dispatch and note that the architect output is incomplete.
+
+See [`docs/multitask-playbook.md`](../../../../docs/multitask-playbook.md) for the full guardrail set.
 
 ## Metrics
 

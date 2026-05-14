@@ -57,6 +57,11 @@
       "type": ["string", "null"],
       "enum": [null, "complete", "blocked", "abandoned"],
       "description": "Optional terminal outcome (for retrospective tagging)"
+    },
+    "multitask_group": {
+      "type": ["string", "null"],
+      "maxLength": 64,
+      "description": "Cohort id when this event was part of a Cursor 3.2 /multitask fan-out (e.g. 'audit-<convoy>-<pr>'). Events sharing this id ran in parallel; aggregators should compute wall-clock cost as max(duration_s within group), not sum."
     }
   }
 }

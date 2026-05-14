@@ -5,7 +5,8 @@ description: >-
   route map, content model — and outputs a user-flow sketch + screen inventory +
   data-model deltas. Read-only. Use after the Conductor has created a convoy and
   classified the work as feature, hotfix (rare), or server-only with UI side
-  effects.
+  effects. Must run sequentially — output feeds role-ux-reviewer.
+multitask: single
 tools: [Read, Grep, Glob, Shell]
 ---
 

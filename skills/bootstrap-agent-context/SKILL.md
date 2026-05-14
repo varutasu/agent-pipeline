@@ -1,17 +1,20 @@
 ---
 name: bootstrap-agent-context
 description: >-
-  Bootstraps a 3-layer agent pipeline for the current repo: L1 context
+  Bootstraps a 3-layer agent pipeline aligned with Cursor 3.2+ (multitask,
+  native worktrees, multi-root workspaces) for the current repo: L1 context
   (`AGENTS.md`, `.cursor/rules/`, `.cursor/skills/`, optional Prisma schema
   map), L2 subagent roles (`.cursor/agents/role-*.md` for the 9-stage
-  idea-to-feature pipeline), and L3 pipeline scaffolding (CI gates, PR
-  template, CODEOWNERS, convoys folder, optional flag wrapper). Detects
-  stack, asks which layers to install, drafts each artifact from templates,
+  idea-to-feature pipeline with explicit multitask annotations), and L3
+  pipeline scaffolding (CI gates, PR template, CODEOWNERS, convoys folder,
+  optional flag wrapper). Detects stack, detects multi-root workspaces,
+  asks which layers to install, drafts each artifact from templates,
   and stops before committing for human review. Use when the user asks to
   bootstrap, scaffold, or deploy agent context / agent pipeline / orchestration
   to a new repo; asks how to set up `AGENTS.md` or subagents for this codebase;
-  asks to standardize this repo to match colab's setup; or asks to reduce
-  token use for AI agents on this repo.
+  asks to standardize this repo to match colab's setup; asks how to use Cursor
+  /multitask with this pipeline; or asks to reduce token use for AI agents on
+  this repo.
 ---
 
 # Bootstrap Agent Context
@@ -48,10 +51,11 @@ Copy this checklist into your first reply and update as you go:
 
 ```
 Bootstrap progress:
-- [ ] Step 0: Detect stack and existing state
+- [ ] Step 0: Detect stack, multi-root workspace, and existing state
 - [ ] Step 1: Confirm which layers to install (L1 / L2 / L3)
 - [ ] Step 2: L1 — AGENTS.md, no-go-zones, stack rules, skills, (Prisma) schema map, agent-context README
 - [ ] Step 3: L2 — 9 role files in .cursor/agents/
+- [ ] Step 3.5: Print multitask cheat sheet (Cursor 3.2+ /multitask dispatch points)
 - [ ] Step 4: L3 — pick stack variant; copy CI + PR template + CODEOWNERS + convoys + optional extras
 - [ ] Step 5: Hand off with review checklist
 ```
@@ -70,6 +74,7 @@ Run these reads in parallel. Do **not** grep large directories.
 | Next.js | Read `package.json`; check for `next` in dependencies |
 | Test runner | `package.json` scripts + dependencies; check for `vitest`, `jest`, `playwright`, `pytest`. Record as **`test_runner: yes / no`** — drives Step 4 conditional |
 | Default branch + branch list | `git branch -a` (or `git for-each-ref --format='%(refname:short)' refs/heads/`). Record whether `develop` exists. Drives Step 4 `branches:` filter pruning |
+| Multi-root workspace | Check the workspace path against `git rev-parse --show-toplevel`. If the workspace root contains multiple distinct git repos (multiple `.git/` directories under siblings, or a `*.code-workspace` file with multiple `folders`), the user is running on Cursor 3.2+ multi-root. **Stop and ask** which root to target — the skill bootstraps ONE repo at a time |
 | README | Read top of `README.md` if it exists, only the first ~50 lines |
 
 Classify the stack into one of:
@@ -176,6 +181,37 @@ For server-only or CLI repos with no UI, omit `role-ux-reviewer`, `role-design-s
 
 If any role file already exists at the destination, propose a diff or write a `.proposed` sibling — do not overwrite.
 
+### Step 3.5: Multitask awareness (Cursor 3.2+)
+
+After L2 roles are in place, surface the **multitask dispatch points** to the user. Don't run anything in parallel here — just tell the user where parallelism is safe so they can use Cursor 3.2 `/multitask` on their first real convoy.
+
+Print this exact block in the hand-off summary (unless L2 was skipped):
+
+```
+Multitask cheat sheet (Cursor 3.2+):
+
+  Audit fan-out (recommended default)
+    After the implementer ships a PR draft, run:
+      /multitask role-reviewer + role-design-system-auditor + role-a11y-auditor
+    on the same diff. All three are read-only and emit independent comments.
+    Use group id: audit-<convoy>-<pr>
+
+  Implementer fleet (advanced — guardrails apply)
+    After architect's plan is approved (gate 1), if briefs declare
+    `depends_on: []` AND have disjoint `files:` lists, fan them out:
+      /multitask role-implementer briefs 1, 2, 3
+    Cursor 3.2's Agents Window worktrees give each subagent its own checkout.
+
+  Never multitask
+    - Planning roles (ia / ux / architect) — each refines the previous
+    - role-conductor — single convoy file output
+    - role-doc-writer — single docs PR output
+
+Full playbook: docs/multitask-playbook.md
+```
+
+The `docs/multitask-playbook.md` file is part of this repo's docs (not vendored into the bootstrapped repo) — link to it in the bootstrapped repo's `docs/agent-context/README.md` instead. If you DO want a local copy in the bootstrapped repo, leave a TODO marker in `docs/agent-context/README.md` and let the maintainer decide.
+
 ### Step 4: L3 — Pipeline scaffolding
 
 Skip this step if the user opted out of L3 OR if stack class is `non-node`.
@@ -188,7 +224,7 @@ Skip this step if the user opted out of L3 OR if stack class is `non-node`.
 | --- | --- |
 | `templates/L3-pipeline/_common/PULL_REQUEST_TEMPLATE.md.template` | `.github/PULL_REQUEST_TEMPLATE.md` |
 | `templates/L3-pipeline/_common/convoys-readme.md.template` | `.convoys/README.md` |
-| `templates/L3-pipeline/_common/wt.sh` | `scripts/wt.sh` (mark executable: `chmod +x scripts/wt.sh` — instruct the user to run this; the skill does NOT execute it) |
+| `templates/L3-pipeline/_common/wt.sh` | `scripts/wt.sh` (deprecated in Cursor 3.2+; the stub prints a pointer to the Agents Window worktree feature. Mark executable: `chmod +x scripts/wt.sh`. Tell the user this is a fallback only — prefer Cursor's native worktrees) |
 | `templates/L3-pipeline/_common/log-convoy-event.sh` | `scripts/log-convoy-event.sh` (mark executable; powers self-analytics — L2 roles call this on each invocation. Add `.convoys/.metrics.jsonl` to `.gitignore` unless the user opts in to commit metrics) |
 
 #### 4b. Stack-variant files
@@ -269,6 +305,7 @@ End your reply with:
 - [ ] Open Cursor → Agents dropdown; verify the 9 roles appear.
 - [ ] Read `role-conductor.md` end-to-end; the rest follow the same shape.
 - [ ] Try a dry-run: ask "Run role-conductor on idea: <X>" in a new chat.
+- [ ] On Cursor 3.2+: try the audit fan-out on a real PR — `/multitask role-reviewer + role-design-system-auditor + role-a11y-auditor` and confirm three independent comments arrive.
 
 ### L3 (if installed)
 - [ ] Replace `@YOUR-GITHUB-HANDLE` in `.github/CODEOWNERS`.
@@ -338,9 +375,9 @@ templates/
 └── L3-pipeline/                             (per-stack)
     ├── _common/                             (4 files; all stacks)
     │   ├── PULL_REQUEST_TEMPLATE.md.template
-    │   ├── convoys-readme.md.template
-    │   ├── wt.sh
-    │   └── log-convoy-event.sh              (powers self-analytics — L2 roles call this)
+    │   ├── convoys-readme.md.template       (mentions Cursor 3.2 worktrees + multitask)
+    │   ├── wt.sh                            (Cursor 3.2 deprecation stub; prints pointer to Agents Window worktrees)
+    │   └── log-convoy-event.sh              (powers self-analytics — L2 roles call this; supports multitask_group cohort field)
     ├── nextjs-prisma/                       (7 files; canonical variant)
     │   ├── README.md
     │   ├── ci.yml.template

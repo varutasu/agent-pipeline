@@ -4,7 +4,10 @@ description: >-
   Builds one PR worth of code from one architect brief. Strictly scoped to the
   files listed in the brief; never widens scope. Writes code, writes tests,
   runs lint, and proposes the PR (does not open it). Use after the architect's
-  plan is approved by human gate 1, once per brief.
+  plan is approved by human gate 1, once per brief. Multiple implementers can
+  run as a Cursor 3.2 /multitask fleet IFF their briefs declare empty
+  depends_on AND disjoint files: lists; each implementer gets its own worktree.
+multitask: per-brief
 tools: [Read, Grep, Glob, Edit, Write, Shell]
 ---
 
@@ -12,7 +15,9 @@ tools: [Read, Grep, Glob, Edit, Write, Shell]
 
 ## Trigger
 
-User runs this role and references a specific brief: *"Run implementer on `.convoys/<slug>/brief-<N>-...md`"*. Multiple implementers can run in parallel (separate Cursor chats) **as long as their briefs touch disjoint files**.
+User runs this role and references a specific brief: *"Run implementer on `.convoys/<slug>/brief-<N>-...md`"*. Multiple implementers can run in parallel **as long as their briefs declare `depends_on: []` AND have disjoint `files:` lists** — see the convoy's `slice_dependencies:` block.
+
+Preferred parallel-dispatch path on Cursor 3.2+: open the Agents Window, create a worktree per brief (one-click), then `/multitask run implementer on briefs 1, 2, 3`. Cursor isolates each subagent in its own worktree automatically. See [`docs/multitask-playbook.md`](../../../../docs/multitask-playbook.md) Pattern B.
 
 ## Inputs
 

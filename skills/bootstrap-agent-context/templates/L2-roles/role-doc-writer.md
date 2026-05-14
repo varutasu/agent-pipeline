@@ -5,6 +5,8 @@ description: >-
   entries, updates AGENTS.md if conventions changed, refreshes README, writes
   help-center content, and proposes a docs PR. Use after PR merge (gate 2)
   before prod promote (gate 3). Skip when convoy frontmatter has skip: docs.
+  Must run sequentially — writes a single docs PR.
+multitask: single
 tools: [Read, Grep, Glob, Edit, Write, Shell]
 ---
 

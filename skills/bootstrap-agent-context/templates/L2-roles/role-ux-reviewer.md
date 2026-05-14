@@ -4,7 +4,9 @@ description: >-
   UX / IX review pass against the existing design system. Identifies which
   existing components and patterns to reuse, calls out anti-patterns to avoid,
   and lists a11y constraints that must be satisfied. Read-only. Use after
-  IA Architect on any feature with UI changes.
+  IA Architect on any feature with UI changes. Must run sequentially — refines
+  the IA section, feeds role-architect.
+multitask: single
 tools: [Read, Grep, Glob, Shell]
 ---
 

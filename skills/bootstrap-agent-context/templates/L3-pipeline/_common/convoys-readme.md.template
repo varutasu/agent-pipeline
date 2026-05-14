@@ -82,6 +82,28 @@ Update status by editing the convoy frontmatter as you progress.
 
 See `.cursor/agents/role-conductor.md` for the Conductor's full spec.
 
+## Multitask + worktrees (Cursor 3.2+)
+
+[Cursor 3.2 (Apr 24, 2026)](https://cursor.com/changelog/04-24-26) added `/multitask` async subagents and native worktree management in the Agents Window. The pipeline uses both:
+
+**Audit fan-out** — after an implementer ships a PR draft:
+
+```
+/multitask role-reviewer + role-design-system-auditor + role-a11y-auditor
+```
+
+All three read the same diff and emit independent comments. Use group id `audit-<convoy>-<pr>` so analytics can compute wall-clock savings.
+
+**Implementer fleet** — after architect's plan is approved (gate 1), if `slice_dependencies:` declares parallel-safe briefs (`depends_on: []`, disjoint `files:`):
+
+```
+/multitask role-implementer briefs 1, 2, 3
+```
+
+Use Cursor's Agents Window to create a worktree per brief — one click each. The legacy `scripts/wt.sh` is now a deprecation stub.
+
+See the [multitask playbook](https://github.com/varutasu/agent-pipeline/blob/main/docs/multitask-playbook.md) for the full guardrail set.
+
 ## Self-analytics
 
 Each L2 role appends one event to `.convoys/.metrics.jsonl` via `scripts/log-convoy-event.sh`. The file is gitignored by default — events stay local. To opt-in to commit team-shared metrics, remove `.convoys/.metrics.jsonl` from `.gitignore`.
