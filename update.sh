@@ -38,7 +38,19 @@ else
 fi
 
 NEW_VERSION="$(cat version.txt 2>/dev/null || echo 'unknown')"
+
+# If sync-agent-context was added in a later release, the symlink in
+# ~/.cursor/skills/ may be missing. Re-run install.sh to top it up.
+if [ -d "$REPO_ROOT/skills/sync-agent-context" ] && [ ! -L "$HOME/.cursor/skills/sync-agent-context" ]; then
+  bold "New skill detected: sync-agent-context — running install.sh to symlink it"
+  bash "$REPO_ROOT/install.sh"
+fi
+
 echo
 bold "Done. Now at version $NEW_VERSION."
 echo "  Symlinks update automatically — no re-install needed."
 echo "  Restart Cursor if templates or SKILL.md changed substantively."
+echo
+echo "To pull pipeline updates into a bootstrapped repo:"
+echo "  Open the consumer repo in Cursor and ask:"
+echo "    \"Sync agent context for this repo.\""

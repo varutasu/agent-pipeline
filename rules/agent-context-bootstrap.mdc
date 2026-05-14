@@ -21,3 +21,11 @@ Then wait for confirmation before reading the skill.
 - The repo is clearly read-only or not the user's (vendored, cloned for reference, third-party).
 
 This is a soft nudge, not a hard requirement. If grep + read solves the user's question in one or two calls, do that instead.
+
+## If the repo IS already bootstrapped
+
+If the workspace has `.agent-context-manifest.yml` at the root and the user asks about updates, pipeline version, drift, or out-of-date rules/skills/agents, suggest the `sync-agent-context` skill instead:
+
+> *"This repo has an agent-pipeline manifest at version X. I can run the `sync-agent-context` skill to compare each installed artifact against the latest pipeline source and propose updates per file. Want me to start?"*
+
+Same soft-nudge etiquette — skip if the question doesn't depend on freshness.

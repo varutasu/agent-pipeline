@@ -11,10 +11,11 @@ description: >-
   asks which layers to install, drafts each artifact from templates,
   and stops before committing for human review. Use when the user asks to
   bootstrap, scaffold, or deploy agent context / agent pipeline / orchestration
-  to a new repo; asks how to set up `AGENTS.md` or subagents for this codebase;
+  to a new repo;   asks how to set up `AGENTS.md` or subagents for this codebase;
   asks to standardize this repo to match colab's setup; asks how to use Cursor
   /multitask with this pipeline; or asks to reduce token use for AI agents on
-  this repo.
+  this repo. Writes `.agent-context-manifest.yml` at install time so the
+  `sync-agent-context` skill can later detect drift and apply selective updates.
 ---
 
 # Bootstrap Agent Context
@@ -57,6 +58,7 @@ Bootstrap progress:
 - [ ] Step 3: L2 — 9 role files in .cursor/agents/
 - [ ] Step 3.5: Print multitask cheat sheet (Cursor 3.2+ /multitask dispatch points)
 - [ ] Step 4: L3 — pick stack variant; copy CI + PR template + CODEOWNERS + convoys + optional extras
+- [ ] Step 4.7: Write `.agent-context-manifest.yml` listing every artifact installed (used by `sync-agent-context` for drift detection)
 - [ ] Step 5: Hand off with review checklist
 ```
 
@@ -226,6 +228,7 @@ Skip this step if the user opted out of L3 OR if stack class is `non-node`.
 | `templates/L3-pipeline/_common/convoys-readme.md.template` | `.convoys/README.md` |
 | `templates/L3-pipeline/_common/wt.sh` | `scripts/wt.sh` (deprecated in Cursor 3.2+; the stub prints a pointer to the Agents Window worktree feature. Mark executable: `chmod +x scripts/wt.sh`. Tell the user this is a fallback only — prefer Cursor's native worktrees) |
 | `templates/L3-pipeline/_common/log-convoy-event.sh` | `scripts/log-convoy-event.sh` (mark executable; powers self-analytics — L2 roles call this on each invocation. Add `.convoys/.metrics.jsonl` to `.gitignore` unless the user opts in to commit metrics) |
+| `templates/L3-pipeline/_common/agent-context-drift.yml.template` | `.github/workflows/agent-context-drift.yml` (weekly cron + manual trigger; opens an issue when this repo falls behind the pipeline. Tell the user: skip this file if you don't want passive drift monitoring) |
 
 #### 4b. Stack-variant files
 
@@ -288,6 +291,56 @@ After copying `ci.yml`, edit it based on Step 0 findings:
 
 If the repo already has `.github/workflows/ci.yml` or `.github/CODEOWNERS`, do NOT overwrite. Read them, propose a diff, or write `.proposed` siblings. CI workflows are especially sensitive — collisions are common.
 
+### Step 4.7: Write the manifest
+
+After all selected layers have been installed, write `.agent-context-manifest.yml` at the repo root. This file is the contract between this repo and the pipeline; it's what `sync-agent-context` reads later to detect drift.
+
+**Inputs the agent has at this point:**
+
+- Pipeline version: read `<PIPELINE_ROOT>/version.txt` (PIPELINE_ROOT = `dirname(dirname(readlink(~/.cursor/skills/bootstrap-agent-context)))`).
+- Pipeline source URL: the canonical upstream URL. For `varutasu/agent-pipeline`: `https://github.com/varutasu/agent-pipeline`. For the Trimble fork: `https://github.com/rstillwell-trimb/tux_fs-agent-pipeline`.
+- ISO timestamp: `date -u +%Y-%m-%dT%H:%M:%SZ`.
+- The list of files actually written in Steps 2 / 3 / 4 / 4.5. **Only files the skill itself wrote** go in `artifacts`. Hand-curated files (`AGENTS.md`) and runtime outputs (`docs/SCHEMA_MAP.md`, `.convoys/*`) are NOT tracked.
+
+**Hash computation:**
+
+```bash
+shasum -a 256 <path> | awk '{print "sha256:" $1}'
+```
+
+(Use `sha256sum` if `shasum` is unavailable on Linux.)
+
+**Manifest content:**
+
+Start from `templates/L1-context/agent-context-manifest.yml.template`. For each tracked artifact, append one entry:
+
+```yaml
+  - path: ".cursor/agents/role-conductor.md"
+    source: "skills/bootstrap-agent-context/templates/L2-roles/role-conductor.md"
+    version: "<PIPELINE_VERSION>"
+    installed_hash: "sha256:<hex>"
+```
+
+Sort artifacts by `path` for deterministic diffs.
+
+**What to track:**
+
+| Layer | Artifacts to include |
+| --- | --- |
+| L1 | `.cursor/rules/no-go-zones.mdc`, each stack-specific `.cursor/rules/<name>.mdc`, each `.cursor/skills/<name>/SKILL.md`, `scripts/generate-schema-map.ts` (if Prisma), `.cursor/rules/prisma-schema-map.mdc` (if Prisma), `docs/agent-context/README.md` |
+| L2 | Every `.cursor/agents/role-*.md` file written |
+| L3 | `.github/PULL_REQUEST_TEMPLATE.md`, `.convoys/README.md`, `scripts/wt.sh`, `scripts/log-convoy-event.sh`, every `.github/workflows/<name>.yml` written (including `agent-context-drift.yml` if installed), `.github/CODEOWNERS`, stack-specific extras (`lib/flags/index.ts`, `tests/smoke/app.smoke.spec.ts`) |
+| L0 | Nothing — L0 is per-machine MCP install, not per-repo files (except `.code-review-graphignore` and `prefer-code-graph.mdc` if installed, which DO get tracked) |
+
+**Do NOT track:**
+
+- `AGENTS.md` — hand-curated; tracking gives false drift.
+- `docs/SCHEMA_MAP.md` — regenerated by script, not a static template.
+- `package.json` edits, `tsconfig.seed.json` — edited but not authored by the skill.
+- Anything the user pre-existing files the skill left alone.
+
+After writing the manifest, the new file goes in the user's commit alongside everything else. The skill mentions this in the hand-off (Step 5).
+
 ### Step 5: Hand off
 
 End your reply with:
@@ -311,10 +364,15 @@ End your reply with:
 - [ ] Replace `@YOUR-GITHUB-HANDLE` in `.github/CODEOWNERS`.
 - [ ] (Next.js) Set `vars.PREVIEW_URL_PATTERN` or delete preview-smoke.yml + visual-diff.yml.
 - [ ] (If installed) `chmod +x scripts/wt.sh`.
+- [ ] (If installed) `agent-context-drift.yml` runs weekly. Enable Actions on the repo if not already on. To disable, just delete the file.
 - [ ] Open a throwaway PR to verify CI gates run green.
 
+### Manifest
+- [ ] Verify `.agent-context-manifest.yml` exists at repo root. Open it and confirm `pipeline_version`, `layers`, and the `artifacts` list match what the skill installed.
+- [ ] Future updates: ask Cursor *"Sync agent context for this repo"* — the `sync-agent-context` skill reads this manifest and proposes per-file updates.
+
 ### Final
-- [ ] `git add` and commit only after review.
+- [ ] `git add` and commit only after review. **Include `.agent-context-manifest.yml` in the commit** — it's the source of truth for future syncs.
 ```
 
 ## What this skill does NOT do
@@ -353,7 +411,7 @@ Before handing off, confirm:
 
 ```
 templates/
-├── L1-context/                              (8 files; per-repo customization required)
+├── L1-context/                              (9 files; per-repo customization required)
 │   ├── AGENTS.md.template
 │   ├── no-go-zones.mdc
 │   ├── api-routes.mdc.template
@@ -361,6 +419,7 @@ templates/
 │   ├── prisma-schema-map.mdc.template
 │   ├── generate-schema-map.ts
 │   ├── agent-context-readme.md.template
+│   ├── agent-context-manifest.yml.template  (Step 4.7 writes this; tracked by sync-agent-context)
 │   └── validation.md.template
 ├── L2-roles/                                (9 files; copy verbatim)
 │   ├── role-conductor.md
@@ -373,11 +432,12 @@ templates/
 │   ├── role-a11y-auditor.md
 │   └── role-doc-writer.md
 └── L3-pipeline/                             (per-stack)
-    ├── _common/                             (4 files; all stacks)
+    ├── _common/                             (5 files; all stacks)
     │   ├── PULL_REQUEST_TEMPLATE.md.template
     │   ├── convoys-readme.md.template       (mentions Cursor 3.2 worktrees + multitask)
     │   ├── wt.sh                            (Cursor 3.2 deprecation stub; prints pointer to Agents Window worktrees)
-    │   └── log-convoy-event.sh              (powers self-analytics — L2 roles call this; supports multitask_group cohort field)
+    │   ├── log-convoy-event.sh              (powers self-analytics — L2 roles call this; supports multitask_group cohort field)
+    │   └── agent-context-drift.yml.template (weekly cron; opens issue when manifest is behind upstream pipeline)
     ├── nextjs-prisma/                       (7 files; canonical variant)
     │   ├── README.md
     │   ├── ci.yml.template

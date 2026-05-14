@@ -1,0 +1,164 @@
+# agent-context drift detection
+#
+# Weekly + on-demand check: does this repo's installed agent-pipeline
+# artifacts match the latest upstream pipeline release?
+#
+# - Reads .agent-context-manifest.yml (committed at repo root)
+# - Clones the pipeline repo at its latest tag
+# - Compares each tracked artifact's installed_hash to the pipeline source hash
+# - Compares manifest pipeline_version to pipeline version.txt
+# - Opens (or updates) an issue titled "agent-context: N files behind v<X>"
+#   if drift is detected
+#
+# No auto-fix. The fix workflow is: a human runs `sync-agent-context` in
+# Cursor and reviews per-file diffs.
+
+name: agent-context-drift
+
+on:
+  schedule:
+    # Mondays at 13:00 UTC. Adjust to taste.
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout consumer repo
+        uses: actions/checkout@v4
+
+      - name: Read manifest
+        id: manifest
+        run: |
+          if [ ! -f .agent-context-manifest.yml ]; then
+            echo "::warning::No .agent-context-manifest.yml — agent-pipeline not installed or pre-v0.3.0. Skipping drift check."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          INSTALLED=$(grep -E '^pipeline_version:' .agent-context-manifest.yml | head -1 | sed -E 's/.*"(.*)".*/\1/')
+          SOURCE=$(grep -E '^pipeline_source:' .agent-context-manifest.yml | head -1 | sed -E 's/.*"(.*)".*/\1/')
+          echo "installed_version=$INSTALLED" >> "$GITHUB_OUTPUT"
+          echo "pipeline_source=$SOURCE" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Clone pipeline at latest tag
+        if: steps.manifest.outputs.skip != 'true'
+        id: pipeline
+        run: |
+          PIPELINE_URL="${{ steps.manifest.outputs.pipeline_source }}"
+          # Convert HTTPS URL → clone target. Already in HTTPS form.
+          mkdir -p /tmp/pipeline
+          git clone --depth 50 "$PIPELINE_URL" /tmp/pipeline
+          cd /tmp/pipeline
+          LATEST_TAG=$(git tag --sort=-v:refname | head -1)
+          if [ -z "$LATEST_TAG" ]; then
+            echo "::warning::Pipeline repo has no tags. Comparing against main."
+            LATEST_TAG="main"
+          fi
+          git checkout "$LATEST_TAG"
+          PIPELINE_VER=$(cat version.txt | tr -d '[:space:]')
+          echo "tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$PIPELINE_VER" >> "$GITHUB_OUTPUT"
+
+      - name: Compute drift
+        if: steps.manifest.outputs.skip != 'true'
+        id: drift
+        run: |
+          INSTALLED="${{ steps.manifest.outputs.installed_version }}"
+          UPSTREAM="${{ steps.pipeline.outputs.version }}"
+          BEHIND=0
+          CUSTOMIZED=0
+          CONFLICT=0
+
+          # Walk manifest artifacts. For each, compare installed_hash to local
+          # current hash, and pipeline source hash to installed_hash.
+          # YAML parsing in bash is intentionally minimal — relies on the
+          # bootstrap skill emitting a predictable shape.
+          python3 - <<'PY' >> drift-report.md
+          import hashlib, sys, yaml, os
+
+          def sha(path):
+              if not os.path.exists(path):
+                  return None
+              h = hashlib.sha256()
+              with open(path, "rb") as f:
+                  for chunk in iter(lambda: f.read(8192), b""):
+                      h.update(chunk)
+              return "sha256:" + h.hexdigest()
+
+          with open(".agent-context-manifest.yml") as f:
+              m = yaml.safe_load(f)
+
+          counts = {"behind": [], "customized": [], "conflict": [], "deleted": []}
+          for art in m.get("artifacts", []):
+              local_hash = sha(art["path"])
+              pipe_hash = sha(os.path.join("/tmp/pipeline", art["source"]))
+              if local_hash is None:
+                  counts["deleted"].append(art["path"])
+                  continue
+              local_matches = local_hash == art["installed_hash"]
+              pipe_changed = pipe_hash is not None and pipe_hash != art["installed_hash"]
+              if local_matches and pipe_changed:
+                  counts["behind"].append(art["path"])
+              elif not local_matches and pipe_changed:
+                  counts["conflict"].append(art["path"])
+              elif not local_matches:
+                  counts["customized"].append(art["path"])
+
+          print("# agent-context drift report")
+          print(f"\nInstalled: `{m.get('pipeline_version')}` · Upstream: `${{ steps.pipeline.outputs.version }}` (`${{ steps.pipeline.outputs.tag }}`)")
+          for kind in ("behind", "conflict", "customized", "deleted"):
+              files = counts[kind]
+              if files:
+                  print(f"\n## {kind} ({len(files)})")
+                  for f in files:
+                      print(f"- `{f}`")
+          PY
+
+          BEHIND=$(grep -c '^## behind' drift-report.md || echo 0)
+          CONFLICT=$(grep -c '^## conflict' drift-report.md || echo 0)
+          NEED_ISSUE="false"
+          if [ "$INSTALLED" != "$UPSTREAM" ] || [ "$BEHIND" -gt 0 ] || [ "$CONFLICT" -gt 0 ]; then
+            NEED_ISSUE="true"
+          fi
+          echo "need_issue=$NEED_ISSUE" >> "$GITHUB_OUTPUT"
+          echo "upstream_version=$UPSTREAM" >> "$GITHUB_OUTPUT"
+
+      - name: Open / update drift issue
+        if: steps.manifest.outputs.skip != 'true' && steps.drift.outputs.need_issue == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('drift-report.md', 'utf8') +
+              '\n\n---\n\n_To resolve: open this repo in Cursor and ask **"Sync agent context for this repo"**. The sync skill walks the diff per file._';
+            const title = `agent-context: behind ${{ steps.drift.outputs.upstream_version }}`;
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'agent-context-drift',
+            });
+            const found = existing.data.find(i => i.title.startsWith('agent-context: behind'));
+            if (found) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: found.number,
+                title,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['agent-context-drift'],
+              });
+            }

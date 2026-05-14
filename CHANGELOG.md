@@ -4,6 +4,35 @@ All notable changes to `agent-pipeline` are documented here. This file follows [
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-05-14
+
+Manifest + sync skill. Earlier releases shipped templates one-way: bootstrap a repo, and to pull pipeline updates later you had to diff every file by hand. This release adds a per-repo manifest tracking exactly which artifacts were installed (with sha256 hashes), a new `sync-agent-context` skill that proposes per-file updates against the latest pipeline source, and an optional weekly CI workflow that flags drift in an issue. The goal is consumer scaling: when more than one repo or person is on the pipeline, updates become reviewable diffs instead of all-or-nothing re-bootstraps.
+
+### Added
+
+- **`.agent-context-manifest.yml`** (NEW per-repo file written by bootstrap). Schema v1: tracks `pipeline_version`, `pipeline_source`, `installed_at`, `last_synced_at`, `layers`, and one entry per artifact (`path`, `source`, `version`, `installed_hash` as `sha256:<hex>`). Contract defined in [`docs/manifest-schema.md`](docs/manifest-schema.md).
+- **`skills/sync-agent-context/SKILL.md`** (NEW skill). Reads the manifest, computes current vs. installed-vs-pipeline hashes, classifies each artifact as `up-to-date` / `behind` / `customized` / `conflict`, and asks per-file what to do. Never overwrites a customized file silently. Updates the manifest after applying changes.
+- **`SKILL.md` Step 4.7** (NEW step in bootstrap-agent-context). After all selected layers are installed, the skill computes sha256 hashes of every artifact it wrote, fills in the manifest template, and saves it to the consumer repo root.
+- **`templates/L1-context/agent-context-manifest.yml.template`** — the seed file the bootstrap skill fills in at Step 4.7.
+- **`templates/L3-pipeline/_common/agent-context-drift.yml.template`** (NEW workflow, optional during bootstrap). Weekly cron + manual trigger that clones the pipeline repo at its latest tag, recomputes hashes against the manifest, and opens (or updates) an issue titled "agent-context: behind v<X>" when drift is detected. No auto-fix.
+- **`docs/manifest-schema.md`** (NEW doc) — top-level fields, artifact entry shape, drift classification matrix, worked example, what the manifest does NOT track (`AGENTS.md`, `docs/SCHEMA_MAP.md`, `.convoys/*`).
+- **`install.sh`** symlinks the new sync skill into `~/.cursor/skills/sync-agent-context/`. `update.sh` re-runs `install.sh` automatically if it detects a new skill the existing install missed (so updating from 0.2.0 → 0.3.0 doesn't require manual re-install).
+- **Smoke test** gains a manifest-hash flow check (shell `shasum` vs. Python `hashlib` agree on sha256) and structural checks for the new sync skill, manifest template, schema doc, and drift workflow template.
+
+### Changed
+
+- **`SKILL.md` description** mentions writing the manifest at install time.
+- **`SKILL.md` Step 5 review checklist** gains a Manifest section reminding the user to commit the manifest and pointing at `sync-agent-context` for future updates.
+- **`SKILL.md` template inventory** updated to reflect the new manifest template and drift workflow under `_common/`.
+- **`INSTALL.md`** restructured: Update section now distinguishes "update the local pipeline clone" (run `./update.sh`) from "pull pipeline updates into a bootstrapped repo" (run the sync skill in Cursor).
+- **`README.md`** "What you get" table gains a "Manifest + sync" row. "30-second use" section mentions the sync trigger phrase.
+
+### Backwards compatibility
+
+- Repos bootstrapped before 0.3.0 don't have a manifest. The sync skill detects this and offers retroactive manifest generation (Step 1b of `sync-agent-context`'s SKILL.md) — scans installed artifacts, matches them to pipeline templates, computes hashes, and writes the manifest at the current pipeline version. Caveat: the retro-generated `installed_hash` reflects the file's current state, so pre-existing local edits become invisible until the next user customization.
+- Schema is versioned (`schema_version: 1`). Future breaking changes will bump the field and ship a migration in the sync skill.
+- The drift workflow is opt-in during bootstrap; users who don't want passive monitoring can decline it.
+
 ## [0.2.0] — 2026-05-14
 
 Cursor 3.2 alignment. Cursor 3.2 (Apr 24, 2026) introduced `/multitask` async subagents, native worktrees in the Agents Window, and multi-root workspaces. This release threads support for all three through the L2 role layer and the bootstrap skill while keeping the pipeline's human gates non-negotiable. Backwards-compatible — roles without the new `multitask:` frontmatter field are treated as `single`.

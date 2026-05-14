@@ -13,6 +13,7 @@ Then **restart Cursor** so it picks up the new skill and rule.
 The installer:
 
 - Symlinks `skills/bootstrap-agent-context/` → `~/.cursor/skills/bootstrap-agent-context/`
+- Symlinks `skills/sync-agent-context/` → `~/.cursor/skills/sync-agent-context/`
 - Symlinks `rules/agent-context-bootstrap.mdc` → `~/.cursor/rules/agent-context-bootstrap.mdc`
 - Creates `~/agent-pipeline-data/` for analytics output (gitignored from your repos)
 - Records the install location in `~/.agent-pipeline-install` for `update.sh` / `uninstall.sh`
@@ -21,14 +22,28 @@ It is **idempotent** — running it twice is fine. It refuses to overwrite exist
 
 ## Update
 
+### Update the pipeline itself (your local clone)
+
 ```bash
 cd ~/code/agent-pipeline   # or wherever you cloned it
 ./update.sh
 ```
 
-This runs `git pull --ff-only` against your default remote. Because installation uses symlinks, your `~/.cursor/skills/bootstrap-agent-context/` and `~/.cursor/rules/agent-context-bootstrap.mdc` automatically pick up the new content — no re-install needed.
+This runs `git pull --ff-only` against your default remote. Because installation uses symlinks, your `~/.cursor/skills/` symlinks automatically pick up the new content — no re-install needed.
 
 If `git pull` would not be a fast-forward (you have local changes or upstream rewrote history), the script aborts and prints the conflict. Resolve manually.
+
+When new skills are introduced in a later release (e.g. `sync-agent-context` was added in 0.3.0), `update.sh` detects the missing symlink and re-runs `install.sh` to top it up.
+
+### Pull pipeline updates into a bootstrapped repo
+
+After `update.sh` has refreshed your local clone, the consumer repos that were bootstrapped against an older version are still on their old templates. To reconcile them, open the consumer repo in Cursor and ask:
+
+> *"Sync agent context for this repo."*
+
+The `sync-agent-context` skill reads `.agent-context-manifest.yml` at the repo root, compares each installed artifact's hash against the latest pipeline source, classifies drift (up-to-date / behind / customized / conflict), and asks per file what to do. It never silently overwrites local edits. See [`docs/manifest-schema.md`](docs/manifest-schema.md) for the manifest contract.
+
+For passive monitoring, bootstrapped repos that opted into `agent-context-drift.yml` get a weekly CI job that opens an issue when drift is detected.
 
 ## Uninstall
 
@@ -47,7 +62,8 @@ This removes only the symlinks the installer created. It does NOT delete:
 
 | What | Symlink target |
 | --- | --- |
-| Skill | `~/.cursor/skills/bootstrap-agent-context` → `<repo>/skills/bootstrap-agent-context` |
+| Bootstrap skill | `~/.cursor/skills/bootstrap-agent-context` → `<repo>/skills/bootstrap-agent-context` |
+| Sync skill | `~/.cursor/skills/sync-agent-context` → `<repo>/skills/sync-agent-context` |
 | Global rule | `~/.cursor/rules/agent-context-bootstrap.mdc` → `<repo>/rules/agent-context-bootstrap.mdc` |
 | Analytics output | `~/agent-pipeline-data/` (real directory, not symlinked) |
 | Install record | `~/.agent-pipeline-install` (plain text path) |

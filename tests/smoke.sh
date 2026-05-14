@@ -52,10 +52,38 @@ for role in conductor ia-architect ux-reviewer architect implementer reviewer \
 done
 
 # L3 _common files
-for f in PULL_REQUEST_TEMPLATE.md.template convoys-readme.md.template wt.sh log-convoy-event.sh; do
+for f in PULL_REQUEST_TEMPLATE.md.template convoys-readme.md.template wt.sh log-convoy-event.sh agent-context-drift.yml.template; do
   if [ -f "$SKILL_DIR/templates/L3-pipeline/_common/$f" ]; then ok "L3 _common: $f"
   else fail "Missing L3 _common: $f"; fi
 done
+
+# L1 manifest template
+if [ -f "$SKILL_DIR/templates/L1-context/agent-context-manifest.yml.template" ]; then
+  ok "L1 manifest template present"
+else
+  fail "Missing L1 manifest template"
+fi
+
+# sync-agent-context skill
+SYNC_SKILL=skills/sync-agent-context/SKILL.md
+if [ -f "$SYNC_SKILL" ]; then
+  ok "sync-agent-context skill present"
+  # frontmatter description must include the word 'sync' and 'manifest'
+  if grep -q 'sync agent context' "$SYNC_SKILL" && grep -q 'manifest' "$SYNC_SKILL"; then
+    ok "sync skill description has trigger phrases"
+  else
+    fail "sync skill description missing key trigger phrases"
+  fi
+else
+  fail "Missing skills/sync-agent-context/SKILL.md"
+fi
+
+# manifest schema doc
+if [ -f docs/manifest-schema.md ]; then
+  ok "docs/manifest-schema.md present"
+else
+  fail "Missing docs/manifest-schema.md"
+fi
 
 # 2. Syntax -------------------------------------------------------------------
 hdr "2. Syntax — shell + TS scripts parse"
@@ -136,7 +164,25 @@ if command -v npx >/dev/null 2>&1; then
   rm -rf "$FIXTURE_DIR/scripts" "$FIXTURE_DIR/docs"
 fi
 
-# 4c. analyze-convoys + render-dashboard run cleanly against the smoke event
+# 4c. manifest hashing flow — verify sha256 computation matches across tools
+MANIFEST_FIXTURE="$(mktemp -d)"
+echo "hello agent-pipeline" > "$MANIFEST_FIXTURE/sample.txt"
+if command -v shasum >/dev/null 2>&1; then
+  EXPECTED=$(shasum -a 256 "$MANIFEST_FIXTURE/sample.txt" | awk '{print "sha256:" $1}')
+elif command -v sha256sum >/dev/null 2>&1; then
+  EXPECTED=$(sha256sum "$MANIFEST_FIXTURE/sample.txt" | awk '{print "sha256:" $1}')
+else
+  EXPECTED=""
+fi
+PY_HASH=$(python3 -c "import hashlib;print('sha256:'+hashlib.sha256(open('$MANIFEST_FIXTURE/sample.txt','rb').read()).hexdigest())" 2>/dev/null)
+if [ -n "$EXPECTED" ] && [ "$EXPECTED" = "$PY_HASH" ]; then
+  ok "manifest hash flow: shell + python agree on sha256 ($EXPECTED)"
+else
+  warn "manifest hash flow: shell vs python mismatch (shell='$EXPECTED' py='$PY_HASH') — sync skill will use whichever is available"
+fi
+rm -rf "$MANIFEST_FIXTURE"
+
+# 4d. analyze-convoys + render-dashboard run cleanly against the smoke event
 if command -v npx >/dev/null 2>&1; then
   if npx --yes -p tsx tsx analytics/analyze-convoys.ts "$SMOKE_DIR" >/dev/null 2>&1; then
     ok "analyze-convoys.ts: ran cleanly against smoke data"
