@@ -23,6 +23,7 @@ Repos with a manifest, reconciled against the pipeline.
 | Repo | Owner | Stack | Layers | Pipeline source | Manifest version | Last sync | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [`zest`](https://github.com/varutasu/zest) (private) | Personal | Next.js + Prisma | L1 + L2 + L3 | upstream | `0.3.0` | 2026-05-21 | First end-to-end sync. Retroactive manifest. Step 5 installed `scripts/log-convoy-event.sh`. 22 artifacts tracked. `add-api-route` skill is repo-local (not in pipeline). |
+| [`localeloop`](https://github.com/rstillwell-trimb/localeloop) (private) | Trimble | Next.js + Prisma | L1 + L2 + L3 | trimble-fork | `0.1.4-trimble` | 2026-05-21 | Synced after the harvest of its own `role-architect.md` customization upstream. 23 artifacts tracked. Step 5 installed: `scripts/log-convoy-event.sh`, `scripts/generate-schema-map.ts`, `.cursor/rules/prisma-schema-map.mdc`. Out-of-pipeline files left alone: `realtime-yjs.mdc`, `docs-edit-policy.mdc`, `.cursor/skills/docs-writer/`, and `.cursor/README.md` (deliberately relocated from `docs/agent-context/README.md` — respect the layout choice; not tracked). End-to-end metrics fix verified: `bash scripts/log-convoy-event.sh` produces a valid event line. `.gitignore` updated to exclude `.convoys/.metrics.jsonl`. |
 
 ## Manifest pending — installed but not synced
 
@@ -31,7 +32,6 @@ Repos that were bootstrapped before v0.3.0 (no manifest) and need the retroactiv
 | Repo | Owner | Stack | Layers | Pipeline source | Last checked | Notes / known drift |
 | --- | --- | --- | --- | --- | --- | --- |
 | [`colab`](https://github.com/varutasu/colab) (private) | Trimble | Next.js + Prisma + Cloud Run | L0 + L1 + L2 + L3 | trimble-fork | 2026-05-21 | Richest install. Has `.github/workflows/ci.yml.proposed` left from initial bootstrap — clean up during sync. Colab-specific workflows (`deploy-*`, `migrate-*`, `refresh-staging-db.yml`, `probe-staging-announcements.yml`) are out-of-pipeline; manifest must NOT track them. Active feature work daily. Missing `scripts/log-convoy-event.sh` — install via Step 5. |
-| [`localeloop`](https://github.com/rstillwell-trimb/localeloop) (private) | Trimble | Next.js + Prisma | L1 + L2 + L3 | trimble-fork | 2026-05-21 | Customization in `role-architect.md` ("Boot-the-brief check", "Cross-brief commitments", "Mid-convoy scope expansion") was harvested upstream as v0.4.0 / v0.1.4-trimble on 2026-05-21. On next sync, the role-architect file should reconcile cleanly against the new pipeline (consumer file pre-harvest will appear `behind`; accepting pipeline restores Shell-tool access and adds the v0.3.0 multitask infrastructure that localeloop's earlier customization had reverted). 4 completed convoys; missing `scripts/log-convoy-event.sh` is why none produced metrics — sync Step 5 will install it. |
 
 ## Partial consumers — L1/L3 without full L2
 
