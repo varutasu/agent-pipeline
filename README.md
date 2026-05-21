@@ -52,7 +52,7 @@ The Conductor classifies the work, sets skip flags, and hands off to subsequent 
 agent-pipeline/
 ├── skills/                  # The bootstrap-agent-context skill (the core)
 ├── rules/                   # The global nudge rule
-├── docs/                    # Spec, validation protocol, role reference, case studies
+├── docs/                    # Spec, validation protocol, role reference, case studies, consumer registry
 ├── analytics/               # Self-analytics: transcript miner + convoy aggregator + dashboard
 ├── tests/                   # Smoke tests against fixture repos
 ├── install.sh / update.sh / uninstall.sh
@@ -73,6 +73,8 @@ agent-pipeline/
 Built to solve "I have 13 repos and switching between them costs 30 minutes of agent grep." Methodology overview in [docs/orchestration-spec.md](docs/orchestration-spec.md).
 
 The L1 layer was validated against [`colab`](https://github.com/rstillwell-trimb/colab) (private). The L2 + L3 layers are derived from a synthesis of that work plus design decisions documented in the orchestration spec.
+
+For the canonical list of which repos consume this pipeline (and their sync state), see [docs/CONSUMERS.md](docs/CONSUMERS.md).
 
 ## Contributing
 

@@ -4,6 +4,35 @@ All notable changes to `agent-pipeline` are documented here. This file follows [
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-05-21
+
+First "drift-up" release. The pipeline harvested a hardened `role-architect.md` from a real production retro back into the templates. Until 0.4.0 every release pushed templates one-way (pipeline → consumer); this is the first release where a consumer repo's hard-won lesson flowed back into the canonical pipeline. The pattern proves the design works as a two-way contract.
+
+### Added — `role-architect.md`
+
+- **`## Boot-the-brief check` section** (NEW). Three pre-handoff verifications the Architect must run before declaring the architecture complete: (1) dep-set check (peer dep resolution, recent-major changelog scan), (2) verbatim code shape check (Next.js middleware matchers vs. route groups, Prisma directives, RSC/client-only boundaries, framework plugin wrappers), (3) cross-brief commitments check. Adopted from the `scaffold-nextjs-app` convoy retro recommendation #1 in [`localeloop`](https://github.com/rstillwell-trimb/localeloop) — that convoy lost ~1 hour to a HeroUI v3 + Tailwind 3 + JS-plugin recipe that looked compileable but didn't actually compose.
+- **`## Cross-brief commitments` section** (NEW). Frontmatter pattern for declaring stub / forward-declaration debts between briefs. Both briefs that participate in a commitment MUST declare it; declaring in only one (the convention before 0.4.0) means an implementer reading the depended-on brief in isolation has no visibility into the commitment.
+- **Implementer brief format**: `cross_brief_commitments:` and `deletes:` are now first-class optional frontmatter fields.
+- **`## Mid-convoy scope expansion` section** (NEW). Defines what a scope-expansion PR must include: brief change(s), updated `### Decomposition` table rows, and a new dated entry in the `## Decisions (post-IA round)` section. Stale Decomposition tables were a documented retro finding (`scaffold-nextjs-app` recommendation #6).
+- **Step 11 `Boot the brief`** inserted into the procedure between "Write each brief file" and "Append the Architecture section". Steps renumbered.
+- **Two new anti-patterns**: skipping Boot-the-brief because briefs "look obvious"; declaring a cross-brief commitment in only one of the two participating briefs.
+
+### Changed
+
+- **`role-architect.md`** grew from 122 → 199 lines (over the 120-line role budget). The smoke test still passes (budget is a `warn`, not a `fail`); future cleanup option is to extract Boot-the-brief / Cross-brief commitments / Mid-convoy scope expansion into a separate `docs/architect-protocols.md` and reference from the role file.
+
+### Drift-up provenance
+
+- Source repo: [`localeloop`](https://github.com/rstillwell-trimb/localeloop) (private), `role-architect.md` at HEAD as of 2026-05-21.
+- Source customization: ~57 lines added (Boot-the-brief check, Cross-brief commitments, Mid-convoy scope expansion); `tools` field had been narrowed to `[Read, Grep, Glob]` (lost Shell access for metrics emission). The harvest re-broadens `tools` and grafts the additions onto the v0.3.0 baseline so multitask + metrics are preserved.
+- Reconciliation: this release REPLACES localeloop's role file rather than merging — when localeloop syncs against 0.4.0 it should accept-pipeline cleanly with no conflict (assuming localeloop has not modified the file further since 2026-05-21).
+
+### Backwards compatibility
+
+- Existing implementer briefs without `cross_brief_commitments:` or `deletes:` frontmatter continue to work. Both fields are optional and additive.
+- Step renumbering does not change any cross-references in other roles or skills.
+- `role-architect.md` line budget exceeded — known regression, will be addressed in a future release by extracting protocols to a separate doc.
+
 ## [0.3.0] — 2026-05-14
 
 Manifest + sync skill. Earlier releases shipped templates one-way: bootstrap a repo, and to pull pipeline updates later you had to diff every file by hand. This release adds a per-repo manifest tracking exactly which artifacts were installed (with sha256 hashes), a new `sync-agent-context` skill that proposes per-file updates against the latest pipeline source, and an optional weekly CI workflow that flags drift in an issue. The goal is consumer scaling: when more than one repo or person is on the pipeline, updates become reviewable diffs instead of all-or-nothing re-bootstraps.
