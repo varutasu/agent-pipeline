@@ -1,0 +1,32 @@
+import { test, expect } from '@playwright/test';
+
+/**
+ * Smoke tests run against a deployed preview URL.
+ * BASE_URL is injected by the GitHub Action (PREVIEW_URL).
+ *
+ * Add or replace tests here for each critical user path you ship.
+ * Keep this file fast (<60s total). For deeper E2E, use a separate suite.
+ */
+
+const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
+
+test.describe('smoke: app boots and core pages render', () => {
+  test('home redirects or renders without 5xx', async ({ page }) => {
+    const response = await page.goto(BASE);
+    expect(response?.status(), 'home should not 5xx').toBeLessThan(500);
+  });
+
+  test('sign-in page renders', async ({ page }) => {
+    await page.goto(`${BASE}/login`);
+    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('public health endpoint responds', async ({ request }) => {
+    const res = await request.get(`${BASE}/api/health`);
+    expect(res.ok(), `${BASE}/api/health should respond 2xx`).toBeTruthy();
+  });
+});
+
+// Add convoy-specific smoke tests below as features ship. Each new flag-gated
+// feature should add a smoke test that exercises the happy path with the flag
+// forced on (if your flag wrapper supports query-string overrides).

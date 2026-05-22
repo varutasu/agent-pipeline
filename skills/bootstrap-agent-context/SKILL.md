@@ -76,19 +76,47 @@ Run these reads in parallel. Do **not** grep large directories.
 | Next.js | Read `package.json`; check for `next` in dependencies |
 | Test runner | `package.json` scripts + dependencies; check for `vitest`, `jest`, `playwright`, `pytest`. Record as **`test_runner: yes / no`** — drives Step 4 conditional |
 | Default branch + branch list | `git branch -a` (or `git for-each-ref --format='%(refname:short)' refs/heads/`). Record whether `develop` exists. Drives Step 4 `branches:` filter pruning |
+| **Deploy platform** | `Glob` for `vercel.json`, `cloudbuild*.yaml`, `app.json` (Heroku), `coolify.json`, `Dockerfile`, `fly.toml`, `netlify.toml`. Drives Step 4 L3 variant selection. See **deploy-platform detection** below |
 | Multi-root workspace | Check the workspace path against `git rev-parse --show-toplevel`. If the workspace root contains multiple distinct git repos (multiple `.git/` directories under siblings, or a `*.code-workspace` file with multiple `folders`), the user is running on Cursor 3.2+ multi-root. **Stop and ask** which root to target — the skill bootstraps ONE repo at a time |
 | README | Read top of `README.md` if it exists, only the first ~50 lines |
 
 Classify the stack into one of:
 
-| Stack class | Trigger | L3 variant |
-| --- | --- | --- |
-| `nextjs-prisma` | `next` in deps AND `prisma/schema.prisma` exists | `templates/L3-pipeline/nextjs-prisma/` |
-| `nextjs` | `next` in deps, no Prisma | `templates/L3-pipeline/nextjs/` (overrides) + `nextjs-prisma/` (rest) |
-| `node-generic` | `package.json` exists, neither Next.js nor Prisma | `templates/L3-pipeline/node-generic/` |
-| `non-node` | No `package.json` | Skip L3 entirely; document why |
+| Stack class | Trigger |
+| --- | --- |
+| `nextjs-prisma` | `next` in deps AND `prisma/schema.prisma` exists |
+| `nextjs` | `next` in deps, no Prisma |
+| `node-generic` | `package.json` exists, neither Next.js nor Prisma |
+| `non-node` | No `package.json` |
 
 Stop here if you can't classify and ask the user what stack to target.
+
+#### Deploy-platform detection
+
+Detect which deploy platform handles the build (so we don't duplicate it in CI). Use these heuristics first; **always confirm with the user in Step 1** before picking a variant.
+
+| Signal | Likely platform |
+| --- | --- |
+| `vercel.json` at repo root, OR `.vercel/` directory committed | **Vercel** |
+| `cloudbuild.yaml` / `cloudbuild-ci.yaml` / `cloudbuild-staging.yaml` at repo root | **Cloud Build** (Google Cloud) |
+| `Dockerfile` at root AND no Vercel/Cloud Build signals AND README mentions Coolify/self-hosted | **Coolify** |
+| `fly.toml` | Fly.io (no per-platform variant yet — fall back to baseline `nextjs-prisma`) |
+| `netlify.toml` | Netlify (no per-platform variant yet — fall back to baseline `nextjs-prisma`) |
+| None of the above | **GitHub Actions** (the build itself runs in GHA — use baseline `nextjs-prisma`) |
+
+For `nextjs-prisma` stacks, the L3 variant is **stack + platform**:
+
+| Stack | Platform | L3 variant directory |
+| --- | --- | --- |
+| `nextjs-prisma` | Vercel | `templates/L3-pipeline/nextjs-prisma-vercel/` |
+| `nextjs-prisma` | Coolify | `templates/L3-pipeline/nextjs-prisma-coolify/` |
+| `nextjs-prisma` | Cloud Build | `templates/L3-pipeline/nextjs-prisma-cloudbuild/` |
+| `nextjs-prisma` | GitHub Actions / unknown / other | `templates/L3-pipeline/nextjs-prisma/` (baseline; GHA does the build) |
+| `nextjs` | (any) | `templates/L3-pipeline/nextjs/` overrides + `nextjs-prisma/` rest. No platform variants yet — falls back to baseline. |
+| `node-generic` | (any) | `templates/L3-pipeline/node-generic/`. No platform variants yet. |
+| `non-node` | (any) | Skip L3 entirely; document why. |
+
+If detection is ambiguous (e.g. both `vercel.json` AND `cloudbuild.yaml` present), ask in Step 1.
 
 ### Step 1: Confirm scope with the user
 
@@ -103,6 +131,13 @@ Use `AskQuestion` with these questions, allow_multiple where indicated:
    - Tighten in place (read, diff, edit existing files)
    - Side-by-side draft (write new file with `.proposed` suffix)
    - Skip files that already exist
+
+3. **Which deploy platform handles the build?** (single-select; only ask if L3 is selected and stack class is `nextjs-prisma`. Pre-fill the option that matches Step 0's deploy-platform detection.)
+   - Vercel — use `nextjs-prisma-vercel/` (no GHA build job; preview-smoke + visual-diff use Vercel deployment URL)
+   - Coolify — use `nextjs-prisma-coolify/` (no GHA build job; no preview-smoke / visual-diff by default)
+   - Google Cloud Build — use `nextjs-prisma-cloudbuild/` (no GHA `ci.yml`; ships `cloudbuild-ci.yaml` instead)
+   - GitHub Actions (build runs in GHA) — use baseline `nextjs-prisma/` (full build + tests + preview-smoke)
+   - Other / unknown — use baseline `nextjs-prisma/` and document in the hand-off
 
 Wait for confirmation. Note: each layer is independent — the user can install one, two, or three.
 
@@ -232,17 +267,40 @@ Skip this step if the user opted out of L3 OR if stack class is `non-node`.
 
 #### 4b. Stack-variant files
 
-For `nextjs-prisma`, copy all of:
+Substitute `<variant>` below with the directory chosen in Step 1 question 3 (one of `nextjs-prisma`, `nextjs-prisma-vercel`, `nextjs-prisma-coolify`, `nextjs-prisma-cloudbuild`).
+
+For `nextjs-prisma` (baseline) and `nextjs-prisma-vercel`, copy all of:
 
 | Source | Destination |
 | --- | --- |
-| `templates/L3-pipeline/nextjs-prisma/ci.yml.template` | `.github/workflows/ci.yml` |
-| `templates/L3-pipeline/nextjs-prisma/preview-smoke.yml.template` | `.github/workflows/preview-smoke.yml` |
-| `templates/L3-pipeline/nextjs-prisma/visual-diff.yml.template` | `.github/workflows/visual-diff.yml` |
-| `templates/L3-pipeline/nextjs-prisma/pr-health-rollup.yml.template` | `.github/workflows/pr-health-rollup.yml` |
-| `templates/L3-pipeline/nextjs-prisma/CODEOWNERS.template` | `.github/CODEOWNERS` (replace `@YOUR-GITHUB-HANDLE`) |
-| `templates/L3-pipeline/nextjs-prisma/flags-index.ts.template` | `lib/flags/index.ts` |
-| `templates/L3-pipeline/nextjs-prisma/playwright-smoke.spec.ts.template` | `tests/smoke/app.smoke.spec.ts` |
+| `templates/L3-pipeline/<variant>/ci.yml.template` | `.github/workflows/ci.yml` |
+| `templates/L3-pipeline/<variant>/preview-smoke.yml.template` | `.github/workflows/preview-smoke.yml` |
+| `templates/L3-pipeline/<variant>/visual-diff.yml.template` | `.github/workflows/visual-diff.yml` |
+| `templates/L3-pipeline/<variant>/pr-health-rollup.yml.template` | `.github/workflows/pr-health-rollup.yml` |
+| `templates/L3-pipeline/<variant>/CODEOWNERS.template` | `.github/CODEOWNERS` (replace `@YOUR-GITHUB-HANDLE`) |
+| `templates/L3-pipeline/<variant>/flags-index.ts.template` | `lib/flags/index.ts` |
+| `templates/L3-pipeline/<variant>/playwright-smoke.spec.ts.template` | `tests/smoke/app.smoke.spec.ts` |
+
+For `nextjs-prisma-coolify`, copy a subset (Coolify has no per-PR previews by default — preview-smoke and visual-diff are omitted):
+
+| Source | Destination |
+| --- | --- |
+| `templates/L3-pipeline/nextjs-prisma-coolify/ci.yml.template` | `.github/workflows/ci.yml` |
+| `templates/L3-pipeline/nextjs-prisma-coolify/pr-health-rollup.yml.template` | `.github/workflows/pr-health-rollup.yml` |
+| `templates/L3-pipeline/nextjs-prisma-coolify/CODEOWNERS.template` | `.github/CODEOWNERS` |
+| `templates/L3-pipeline/nextjs-prisma-coolify/flags-index.ts.template` | `lib/flags/index.ts` |
+| `templates/L3-pipeline/nextjs-prisma-coolify/playwright-smoke.spec.ts.template` | `tests/smoke/app.smoke.spec.ts` (kept as opt-in if user adds preview-smoke later) |
+
+For `nextjs-prisma-cloudbuild`, the GHA `ci.yml` is replaced by Cloud Build:
+
+| Source | Destination |
+| --- | --- |
+| `templates/L3-pipeline/nextjs-prisma-cloudbuild/cloudbuild-ci.yaml.template` | `cloudbuild-ci.yaml` (repo root) |
+| `templates/L3-pipeline/nextjs-prisma-cloudbuild/pr-health-rollup.yml.template` | `.github/workflows/pr-health-rollup.yml` |
+| `templates/L3-pipeline/nextjs-prisma-cloudbuild/CODEOWNERS.template` | `.github/CODEOWNERS` |
+| `templates/L3-pipeline/nextjs-prisma-cloudbuild/flags-index.ts.template` | `lib/flags/index.ts` |
+
+Do NOT install `.github/workflows/ci.yml` for the cloudbuild variant — Cloud Build is the source of truth. (preview-smoke + visual-diff are also skipped by default; see the variant's README for opt-in instructions.)
 
 For `nextjs` (no Prisma), use the `nextjs-prisma` set above EXCEPT replace these two with the leaner versions:
 
@@ -283,9 +341,12 @@ After copying `ci.yml`, edit it based on Step 0 findings:
 #### 4c. Required follow-ups (tell the user; do NOT do these yourself)
 
 - Replace `@YOUR-GITHUB-HANDLE` in `.github/CODEOWNERS` with their GitHub handle (or team like `@org/team-name`).
-- For `nextjs-prisma` / `nextjs`: set `vars.PREVIEW_URL_PATTERN` in repo settings, OR delete `preview-smoke.yml` and `visual-diff.yml` if no preview URLs exist.
-- For Playwright: `npm i -D @playwright/test && npx playwright install` if not already.
-- For the schema-map CI job (`nextjs-prisma`): only enable if L1 step 2e ran (i.e. the script + npm script exist).
+- For baseline `nextjs-prisma` / `nextjs` (GHA-build variant): set `vars.PREVIEW_URL_PATTERN` in repo settings, OR delete `preview-smoke.yml` and `visual-diff.yml` if no preview URLs exist.
+- For `nextjs-prisma-vercel`: install the Vercel GitHub integration if not already; preview-smoke + visual-diff use `patrickedqvist/wait-for-vercel-preview` and need no extra config.
+- For `nextjs-prisma-coolify`: nothing extra — preview-smoke + visual-diff aren't installed. If you have per-branch preview URLs in Coolify, the variant README explains how to opt in.
+- For `nextjs-prisma-cloudbuild`: install the Cloud Build GitHub App and create a PR trigger pointing at `cloudbuild-ci.yaml`. Make the Cloud Build status a required check on `develop` and `main`.
+- For Playwright (any variant with smoke or visual-diff): `npm i -D @playwright/test && npx playwright install` if not already.
+- For the schema-map CI job (any nextjs-prisma variant): only enable if L1 step 2e ran (i.e. the script + npm script exist).
 
 #### 4d. Skip when L3 file already exists
 
@@ -329,7 +390,7 @@ Sort artifacts by `path` for deterministic diffs.
 | --- | --- |
 | L1 | `.cursor/rules/no-go-zones.mdc`, each stack-specific `.cursor/rules/<name>.mdc`, each `.cursor/skills/<name>/SKILL.md`, `scripts/generate-schema-map.ts` (if Prisma), `.cursor/rules/prisma-schema-map.mdc` (if Prisma), `docs/agent-context/README.md` |
 | L2 | Every `.cursor/agents/role-*.md` file written |
-| L3 | `.github/PULL_REQUEST_TEMPLATE.md`, `.convoys/README.md`, `scripts/wt.sh`, `scripts/log-convoy-event.sh`, every `.github/workflows/<name>.yml` written (including `agent-context-drift.yml` if installed), `.github/CODEOWNERS`, stack-specific extras (`lib/flags/index.ts`, `tests/smoke/app.smoke.spec.ts`) |
+| L3 | `.github/PULL_REQUEST_TEMPLATE.md`, `.convoys/README.md`, `scripts/wt.sh`, `scripts/log-convoy-event.sh`, every `.github/workflows/<name>.yml` written (including `agent-context-drift.yml` if installed), `.github/CODEOWNERS`, `cloudbuild-ci.yaml` (cloudbuild variant only), stack-specific extras (`lib/flags/index.ts`, `tests/smoke/app.smoke.spec.ts`) |
 | L0 | Nothing — L0 is per-machine MCP install, not per-repo files (except `.code-review-graphignore` and `prefer-code-graph.mdc` if installed, which DO get tracked) |
 
 **Do NOT track:**
@@ -438,16 +499,38 @@ templates/
     │   ├── wt.sh                            (Cursor 3.2 deprecation stub; prints pointer to Agents Window worktrees)
     │   ├── log-convoy-event.sh              (powers self-analytics — L2 roles call this; supports multitask_group cohort field)
     │   └── agent-context-drift.yml.template (weekly cron; opens issue when manifest is behind upstream pipeline)
-    ├── nextjs-prisma/                       (7 files; canonical variant)
+    ├── nextjs-prisma/                       (7 files; baseline — GHA does the build)
     │   ├── README.md
-    │   ├── ci.yml.template
+    │   ├── ci.yml.template                   (lint + types + build + test + schema-map)
     │   ├── preview-smoke.yml.template
     │   ├── visual-diff.yml.template
     │   ├── pr-health-rollup.yml.template
     │   ├── CODEOWNERS.template
     │   ├── flags-index.ts.template
     │   └── playwright-smoke.spec.ts.template
-    ├── nextjs/                              (overrides; uses nextjs-prisma for the rest)
+    ├── nextjs-prisma-vercel/                 (Vercel deploys; no GHA build duplication)
+    │   ├── README.md
+    │   ├── ci.yml.template                   (lint + types + test + schema-map; no build)
+    │   ├── preview-smoke.yml.template        (uses Vercel deployment URL)
+    │   ├── visual-diff.yml.template          (uses Vercel deployment URL)
+    │   ├── pr-health-rollup.yml.template     (rolls up Vercel check + GHA gates)
+    │   ├── CODEOWNERS.template
+    │   ├── flags-index.ts.template
+    │   └── playwright-smoke.spec.ts.template
+    ├── nextjs-prisma-coolify/                (Coolify deploys; no per-PR previews by default)
+    │   ├── README.md
+    │   ├── ci.yml.template                   (lint + types + test + schema-map; no build)
+    │   ├── pr-health-rollup.yml.template
+    │   ├── CODEOWNERS.template
+    │   ├── flags-index.ts.template
+    │   └── playwright-smoke.spec.ts.template (opt-in if user adds preview-smoke later)
+    ├── nextjs-prisma-cloudbuild/             (CI runs in Cloud Build; no GHA ci.yml)
+    │   ├── README.md
+    │   ├── cloudbuild-ci.yaml.template       (install + lint + types + test + schema-map)
+    │   ├── pr-health-rollup.yml.template     (reads Cloud Build checks)
+    │   ├── CODEOWNERS.template
+    │   └── flags-index.ts.template
+    ├── nextjs/                              (no Prisma; overrides; uses nextjs-prisma for the rest)
     │   ├── README.md
     │   ├── ci.yml.template
     │   └── CODEOWNERS.template
@@ -456,3 +539,12 @@ templates/
         ├── ci.yml.template
         └── CODEOWNERS.template
 ```
+
+**Per-platform variant matrix (nextjs-prisma stacks only — `nextjs` and `node-generic` fall back to baseline):**
+
+| Variant | Build runs in | GHA `ci.yml`? | Preview-smoke? | Visual-diff? | When to use |
+| --- | --- | --- | --- | --- | --- |
+| `nextjs-prisma` (baseline) | GHA | ✅ full | ✅ via `vars.PREVIEW_URL_PATTERN` | ✅ | No external deploy platform; GHA is the build |
+| `nextjs-prisma-vercel` | Vercel | ✅ minus build | ✅ via Vercel deployment URL | ✅ | Vercel-deployed apps |
+| `nextjs-prisma-coolify` | Coolify | ✅ minus build | ❌ (opt-in) | ❌ (opt-in) | Coolify-deployed apps; single staging env |
+| `nextjs-prisma-cloudbuild` | Cloud Build | ❌ (replaced by `cloudbuild-ci.yaml`) | ❌ (opt-in) | ❌ (opt-in) | Apps with Cloud Build PR trigger |

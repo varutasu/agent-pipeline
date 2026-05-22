@@ -57,6 +57,55 @@ for f in PULL_REQUEST_TEMPLATE.md.template convoys-readme.md.template wt.sh log-
   else fail "Missing L3 _common: $f"; fi
 done
 
+# L3 platform variants: each has a different required file set per its README.
+hdr "1b. L3 platform variants — required files per variant"
+
+# nextjs-prisma (baseline): full set including build job
+BASELINE_DIR="$SKILL_DIR/templates/L3-pipeline/nextjs-prisma"
+for f in README.md ci.yml.template preview-smoke.yml.template visual-diff.yml.template pr-health-rollup.yml.template CODEOWNERS.template flags-index.ts.template playwright-smoke.spec.ts.template; do
+  if [ -f "$BASELINE_DIR/$f" ]; then ok "nextjs-prisma (baseline): $f"
+  else fail "Missing nextjs-prisma (baseline): $f"; fi
+done
+
+# nextjs-prisma-vercel: full set MINUS internal build (no `npm run build` in ci.yml)
+VERCEL_DIR="$SKILL_DIR/templates/L3-pipeline/nextjs-prisma-vercel"
+for f in README.md ci.yml.template preview-smoke.yml.template visual-diff.yml.template pr-health-rollup.yml.template CODEOWNERS.template flags-index.ts.template playwright-smoke.spec.ts.template; do
+  if [ -f "$VERCEL_DIR/$f" ]; then ok "nextjs-prisma-vercel: $f"
+  else fail "Missing nextjs-prisma-vercel: $f"; fi
+done
+if [ -f "$VERCEL_DIR/ci.yml.template" ] && grep -v '^[[:space:]]*#' "$VERCEL_DIR/ci.yml.template" | grep -qE 'run:[[:space:]]+npm run build'; then
+  fail "nextjs-prisma-vercel ci.yml.template should NOT call 'npm run build' as a step (Vercel does the build)"
+else
+  [ -f "$VERCEL_DIR/ci.yml.template" ] && ok "nextjs-prisma-vercel ci.yml.template: no internal build step (correct)"
+fi
+
+# nextjs-prisma-coolify: lean set — no preview-smoke / visual-diff
+COOLIFY_DIR="$SKILL_DIR/templates/L3-pipeline/nextjs-prisma-coolify"
+for f in README.md ci.yml.template pr-health-rollup.yml.template CODEOWNERS.template flags-index.ts.template playwright-smoke.spec.ts.template; do
+  if [ -f "$COOLIFY_DIR/$f" ]; then ok "nextjs-prisma-coolify: $f"
+  else fail "Missing nextjs-prisma-coolify: $f"; fi
+done
+for unwanted in preview-smoke.yml.template visual-diff.yml.template; do
+  if [ -f "$COOLIFY_DIR/$unwanted" ]; then
+    fail "nextjs-prisma-coolify should NOT include $unwanted (no per-PR preview URLs by default)"
+  fi
+done
+if [ -f "$COOLIFY_DIR/ci.yml.template" ] && grep -v '^[[:space:]]*#' "$COOLIFY_DIR/ci.yml.template" | grep -qE 'run:[[:space:]]+npm run build'; then
+  fail "nextjs-prisma-coolify ci.yml.template should NOT call 'npm run build' as a step (Coolify does the build)"
+else
+  [ -f "$COOLIFY_DIR/ci.yml.template" ] && ok "nextjs-prisma-coolify ci.yml.template: no internal build step (correct)"
+fi
+
+# nextjs-prisma-cloudbuild: GHA ci.yml is REPLACED by cloudbuild-ci.yaml
+CLOUDBUILD_DIR="$SKILL_DIR/templates/L3-pipeline/nextjs-prisma-cloudbuild"
+for f in README.md cloudbuild-ci.yaml.template pr-health-rollup.yml.template CODEOWNERS.template flags-index.ts.template; do
+  if [ -f "$CLOUDBUILD_DIR/$f" ]; then ok "nextjs-prisma-cloudbuild: $f"
+  else fail "Missing nextjs-prisma-cloudbuild: $f"; fi
+done
+if [ -f "$CLOUDBUILD_DIR/ci.yml.template" ]; then
+  fail "nextjs-prisma-cloudbuild should NOT include ci.yml.template (Cloud Build replaces GHA CI)"
+fi
+
 # L1 manifest template
 if [ -f "$SKILL_DIR/templates/L1-context/agent-context-manifest.yml.template" ]; then
   ok "L1 manifest template present"

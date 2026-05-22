@@ -1,0 +1,101 @@
+name: PR Health rollup
+
+# Vercel variant: rolls up CI gates AND the Vercel deployment status posted
+# by the Vercel GitHub integration. Build status comes from Vercel, not from
+# our own CI, so the build row here reads from Vercel's check.
+
+on:
+  pull_request:
+    branches: [develop, main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  workflow_run:
+    workflows: [CI, Preview smoke, Visual diff]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  issues: write
+  checks: read
+  deployments: read
+
+jobs:
+  rollup:
+    name: Aggregate gate status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compute status + post sticky comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pr_number = context.payload.pull_request?.number
+              ?? context.payload.workflow_run?.pull_requests?.[0]?.number;
+
+            if (!pr_number) {
+              core.info('No PR context — skipping rollup.');
+              return;
+            }
+
+            const pr = (await github.rest.pulls.get({ owner, repo, pull_number: pr_number })).data;
+            const sha = pr.head.sha;
+
+            const checks = (await github.rest.checks.listForRef({ owner, repo, ref: sha, per_page: 100 })).data.check_runs;
+            const find = (name) => checks.find(c => c.name === name);
+
+            // Vercel posts a check named like "Vercel" or "Vercel – Preview".
+            // Match anything starting with "Vercel" so we don't have to hardcode it.
+            const vercelCheck = checks.find(c => /^vercel/i.test(c.name));
+
+            const skip = (flag) =>
+              new RegExp(`pipeline:.*skip[^\\n]*\\b${flag}\\b`).test(pr.body || '');
+
+            const row = (label, run, opt = false) => {
+              if (!run) return `| ${label} | ${opt ? '⏭ skipped or pending' : '⏳ pending'} |`;
+              if (run.status !== 'completed') return `| ${label} | ⏳ in progress |`;
+              const ok = run.conclusion === 'success';
+              return `| ${label} | ${ok ? '✅ pass' : '❌ ' + run.conclusion} |`;
+            };
+
+            const rows = [
+              row('Vercel build (Preview)', vercelCheck),
+              row('CI: Lint + types', find('Lint + types')),
+              row('CI: Tests', find('Unit + integration tests')),
+              row('CI: Schema map fresh', find('Schema map up to date')),
+              skip('smoke') ? '| Preview smoke | ⏭ skipped (pipeline directive) |' : row('Preview smoke', find('Playwright smoke'), true),
+              skip('visual') ? '| Visual diff | ⏭ skipped (pipeline directive) |' : row('Visual diff', find('Screenshot diff'), true),
+            ];
+
+            const reviewer_comment = (await github.rest.issues.listComments({
+              owner, repo, issue_number: pr_number, per_page: 100,
+            })).data.find(c => c.body?.startsWith('## Reviewer Report'));
+
+            const a11y_comment = (await github.rest.issues.listComments({
+              owner, repo, issue_number: pr_number, per_page: 100,
+            })).data.find(c => c.body?.startsWith('## A11y Audit'));
+
+            const ds_comment = (await github.rest.issues.listComments({
+              owner, repo, issue_number: pr_number, per_page: 100,
+            })).data.find(c => c.body?.startsWith('## Design System Audit'));
+
+            const role_row = (label, c, skipped) =>
+              skipped ? `| ${label} | ⏭ skipped |` : c ? `| ${label} | ✅ posted |` : `| ${label} | ⏳ pending |`;
+
+            const role_rows = [
+              role_row('Reviewer report', reviewer_comment, skip('review')),
+              role_row('A11y audit', a11y_comment, skip('a11y')),
+              role_row('Design system audit', ds_comment, skip('design')),
+            ];
+
+            const marker = '<!-- pipeline-rollup -->';
+            const body = `${marker}\n## Pipeline Health\n\n### Build + CI gates\n\n| Gate | Status |\n| --- | --- |\n${rows.join('\n')}\n\n_Build runs on Vercel; this CI runs tests, schema-map drift, and lint/types only (no duplicate build)._\n\n### Role reports\n\n| Role | Status |\n| --- | --- |\n${role_rows.join('\n')}\n\nSee individual comments above for details. This rollup updates automatically.`;
+
+            const comments = (await github.rest.issues.listComments({
+              owner, repo, issue_number: pr_number, per_page: 100,
+            })).data;
+            const existing = comments.find(c => c.body?.startsWith(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: pr_number, body });
+            }

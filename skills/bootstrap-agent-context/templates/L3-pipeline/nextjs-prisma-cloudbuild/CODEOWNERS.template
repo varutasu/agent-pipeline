@@ -1,0 +1,30 @@
+# CODEOWNERS — review routing for the agent pipeline.
+#
+# REPLACE @YOUR-GITHUB-HANDLE below with your actual GitHub handle (or a team
+# handle like @org/team-name) before merging this file. Until you do, GitHub
+# will show "unknown owner" warnings on PRs but won't block them.
+#
+# Pattern: high-risk paths require explicit human review; others are advisory.
+
+# Global default — every PR notifies these reviewers
+*                                              @YOUR-GITHUB-HANDLE
+
+# High-risk: schema, migrations, auth, money — require review
+prisma/schema.prisma                           @YOUR-GITHUB-HANDLE
+prisma/migrations/**                           @YOUR-GITHUB-HANDLE
+auth.ts                                        @YOUR-GITHUB-HANDLE
+lib/auth-options.ts                            @YOUR-GITHUB-HANDLE
+lib/auth/**                                    @YOUR-GITHUB-HANDLE
+middleware.ts                                  @YOUR-GITHUB-HANDLE
+lib/flags/**                                   @YOUR-GITHUB-HANDLE
+
+# CI / infra — require review
+.github/workflows/**                           @YOUR-GITHUB-HANDLE
+cloudbuild*.yaml                               @YOUR-GITHUB-HANDLE
+Dockerfile*                                    @YOUR-GITHUB-HANDLE
+next.config.*                                  @YOUR-GITHUB-HANDLE
+
+# Agent context — owner should approve changes here so the pipeline stays consistent
+.cursor/agents/**                              @YOUR-GITHUB-HANDLE
+.cursor/rules/**                               @YOUR-GITHUB-HANDLE
+AGENTS.md                                      @YOUR-GITHUB-HANDLE

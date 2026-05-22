@@ -1,0 +1,108 @@
+# -----------------------------------------------------------------------------
+# PR CI pipeline — Cloud Build edition.
+#
+# Use this instead of (not alongside) .github/workflows/ci.yml when you've
+# wired the Cloud Build GitHub App as your PR check. Cloud Build runs lint,
+# type-check, tests, and schema-map drift on every push to a PR branch and
+# posts each step's status back to GitHub. The merge button waits on those
+# checks just like it would for a GHA workflow.
+#
+# Why Cloud Build instead of GitHub Actions?
+#   - You're billing CI to Google Cloud (separate budget from GHA minutes).
+#   - You're already deploying via Cloud Build, so PR CI uses the same image,
+#     same machine type, same secret store — fewer surfaces to maintain.
+#   - You're behind a GHA spending cap and need a redundant path.
+#
+# Steps run in parallel where safe (lint and test don't depend on each other).
+# `install` is the single shared `npm ci` so each downstream step doesn't
+# duplicate it. Prisma client generation is required by lint (type-check) and
+# test (Prisma client mocks in tests/setup.ts).
+#
+# Postgres-backed integration tests: this template assumes you mock Prisma in
+# tests (`tests/setup.ts`). If your suite needs a real Postgres, add a sidecar
+# step using `gcr.io/cloud-builders/docker run -d postgres:16 ...` and start
+# the test step with a wait-for-pg loop. See README for an example.
+# -----------------------------------------------------------------------------
+
+steps:
+  # ---------------------------------------------------------------------------
+  # 1. Install + Prisma generate (shared by lint, type-check, and test).
+  # ---------------------------------------------------------------------------
+  - name: 'node:20'
+    id: 'install'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        npm ci --no-audit --no-fund
+        npx prisma generate
+
+  # ---------------------------------------------------------------------------
+  # 2. Lint — runs in parallel with type-check + test once install is done.
+  # ---------------------------------------------------------------------------
+  - name: 'node:20'
+    id: 'lint'
+    waitFor: ['install']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        npm run lint
+
+  # ---------------------------------------------------------------------------
+  # 3. Type check — runs in parallel with lint + test.
+  # ---------------------------------------------------------------------------
+  - name: 'node:20'
+    id: 'type-check'
+    waitFor: ['install']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        npx tsc --noEmit
+
+  # ---------------------------------------------------------------------------
+  # 4. Test — runs in parallel with lint + type-check once install is done.
+  # ---------------------------------------------------------------------------
+  - name: 'node:20'
+    id: 'test'
+    waitFor: ['install']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        npm run test:run
+
+  # ---------------------------------------------------------------------------
+  # 5. Schema map drift — keeps docs/SCHEMA_MAP.md in lockstep with prisma/schema.prisma.
+  #    Pipeline-specific: required by the architect role's boot-the-brief check.
+  # ---------------------------------------------------------------------------
+  - name: 'node:20'
+    id: 'schema-map'
+    waitFor: ['install']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        npm run schema:map
+        if ! git diff --quiet docs/SCHEMA_MAP.md; then
+          echo "::error::docs/SCHEMA_MAP.md is out of date. Run 'npm run schema:map' and commit."
+          git diff docs/SCHEMA_MAP.md
+          exit 1
+        fi
+
+# A beefier worker pulls install + tsc + vitest down inside Cloud Build's
+# 10-minute soft limit comfortably. (`npm ci` alone takes ~90s on E2_STANDARD_4
+# vs ~25s on E2_HIGHCPU_8.)
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+
+# Hard ceiling. Lint + types + test + schema-map should finish well under
+# 10 minutes; if we ever blow past this it's a sign the suite needs sharding.
+timeout: '1200s'

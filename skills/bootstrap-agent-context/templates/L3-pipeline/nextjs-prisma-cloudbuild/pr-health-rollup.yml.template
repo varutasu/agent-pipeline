@@ -1,0 +1,96 @@
+name: PR Health rollup
+
+# Cloud Build variant: the actual CI runs in Google Cloud Build, not GitHub
+# Actions. The Cloud Build GitHub App posts a status check per build step
+# (or per build, depending on your trigger config). This rollup reads those
+# Cloud Build checks plus the role report comments and aggregates them into
+# one sticky PR comment.
+#
+# Cloud Build check names by default look like:
+#   "Google Cloud Build / <trigger-name> (<project-id>)"
+# We match anything starting with "Google Cloud Build" so trigger-naming
+# doesn't break this rollup.
+
+on:
+  pull_request:
+    branches: [develop, main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  pull-requests: write
+  issues: write
+  checks: read
+
+jobs:
+  rollup:
+    name: Aggregate gate status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compute status + post sticky comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pr_number = context.payload.pull_request?.number;
+
+            if (!pr_number) {
+              core.info('No PR context — skipping rollup.');
+              return;
+            }
+
+            const pr = (await github.rest.pulls.get({ owner, repo, pull_number: pr_number })).data;
+            const sha = pr.head.sha;
+
+            const checks = (await github.rest.checks.listForRef({ owner, repo, ref: sha, per_page: 100 })).data.check_runs;
+
+            // Cloud Build posts checks named e.g. "Google Cloud Build / pr-ci (my-proj)"
+            const cloudBuildChecks = checks.filter(c => /^Google Cloud Build/i.test(c.name));
+
+            const skip = (flag) =>
+              new RegExp(`pipeline:.*skip[^\\n]*\\b${flag}\\b`).test(pr.body || '');
+
+            const row = (label, run) => {
+              if (!run) return `| ${label} | ⏳ pending |`;
+              if (run.status !== 'completed') return `| ${label} | ⏳ in progress |`;
+              const ok = run.conclusion === 'success';
+              return `| ${label} | ${ok ? '✅ pass' : '❌ ' + run.conclusion} |`;
+            };
+
+            const cloudBuildRows = cloudBuildChecks.length === 0
+              ? ['| Cloud Build | ⏳ pending or trigger not configured |']
+              : cloudBuildChecks.map(c => row(c.name.replace(/^Google Cloud Build\s*\/?\s*/i, 'Cloud Build: '), c));
+
+            const reviewer_comment = (await github.rest.issues.listComments({
+              owner, repo, issue_number: pr_number, per_page: 100,
+            })).data.find(c => c.body?.startsWith('## Reviewer Report'));
+
+            const a11y_comment = (await github.rest.issues.listComments({
+              owner, repo, issue_number: pr_number, per_page: 100,
+            })).data.find(c => c.body?.startsWith('## A11y Audit'));
+
+            const ds_comment = (await github.rest.issues.listComments({
+              owner, repo, issue_number: pr_number, per_page: 100,
+            })).data.find(c => c.body?.startsWith('## Design System Audit'));
+
+            const role_row = (label, c, skipped) =>
+              skipped ? `| ${label} | ⏭ skipped |` : c ? `| ${label} | ✅ posted |` : `| ${label} | ⏳ pending |`;
+
+            const role_rows = [
+              role_row('Reviewer report', reviewer_comment, skip('review')),
+              role_row('A11y audit', a11y_comment, skip('a11y')),
+              role_row('Design system audit', ds_comment, skip('design')),
+            ];
+
+            const marker = '<!-- pipeline-rollup -->';
+            const body = `${marker}\n## Pipeline Health\n\n### Build + CI gates (Cloud Build)\n\n| Gate | Status |\n| --- | --- |\n${cloudBuildRows.join('\n')}\n\n_All build, lint, type-check, test, and schema-map drift checks run in Google Cloud Build. GitHub Actions only hosts this rollup + role audits._\n\n### Role reports\n\n| Role | Status |\n| --- | --- |\n${role_rows.join('\n')}\n\nSee individual comments above for details. This rollup updates automatically.`;
+
+            const comments = (await github.rest.issues.listComments({
+              owner, repo, issue_number: pr_number, per_page: 100,
+            })).data;
+            const existing = comments.find(c => c.body?.startsWith(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: pr_number, body });
+            }

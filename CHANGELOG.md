@@ -4,6 +4,39 @@ All notable changes to `agent-pipeline` are documented here. This file follows [
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-05-22
+
+Per-platform L3 overlays. Through 0.4.0 every consumer used the same `nextjs-prisma/` L3 directory regardless of where the app actually deployed (Vercel, Coolify, Cloud Build, etc.). On every PR the `ci.yml` ran `npm run build` while Vercel/Coolify/Cloud Build *also* ran their own build. Three to five minutes of duplicate work, every push, paid for in GitHub Actions minutes (or, in colab's case, a hard-stopped budget). This release ships three deploy-platform-specific L3 variants that drop the duplicated build step and tune preview-smoke + visual-diff to whatever the deploy platform exposes.
+
+### Added — `templates/L3-pipeline/`
+
+- **`nextjs-prisma-vercel/`** (NEW). 7 templates. `ci.yml` runs lint + types + tests + schema-map drift, NO `npm run build` step (Vercel does it). `preview-smoke.yml` and `visual-diff.yml` use `patrickedqvist/wait-for-vercel-preview@v1.3.2` to wait for Vercel's deployment URL — no `vars.PREVIEW_URL_PATTERN` env var needed. `pr-health-rollup.yml` aggregates the Vercel build check alongside our CI gates.
+- **`nextjs-prisma-coolify/`** (NEW). 6 templates. `ci.yml` runs lint + types + tests + schema-map, NO build step (Coolify Docker-builds on push). NO `preview-smoke.yml` or `visual-diff.yml` by default — Coolify is typically a single staging env, not per-PR previews. `pr-health-rollup.yml` rolls up CI gates only (no third-party check). README documents how to opt in to preview-smoke if you've configured per-branch Coolify deployments.
+- **`nextjs-prisma-cloudbuild/`** (NEW). 5 templates. `cloudbuild-ci.yaml` (NEW file type) runs install + lint + type-check + test + schema-map drift in Google Cloud Build with `E2_HIGHCPU_8` machines and a 1200s timeout. NO GHA `ci.yml` — Cloud Build replaces it entirely. `pr-health-rollup.yml` reads the `Google Cloud Build / <trigger>` checks via the GitHub Checks API. Adapted from `colab/cloudbuild-ci.yaml` (production reference).
+- **`SKILL.md` Step 0**: new "Deploy-platform detection" section. Heuristics: `vercel.json` → Vercel, `cloudbuild*.yaml` → Cloud Build, `Dockerfile` + Coolify hint → Coolify, fallback → GitHub Actions.
+- **`SKILL.md` Step 1 question 3**: NEW. "Which deploy platform handles the build?" — single-select, pre-filled by Step 0's detection. Maps to one of four L3 directories.
+- **`SKILL.md` Step 4b**: split into per-variant file-mapping tables. Cloudbuild variant ships `cloudbuild-ci.yaml` at repo root instead of `.github/workflows/ci.yml`.
+- **`SKILL.md` templates inventory**: gains the three new variant directories with annotations + a per-platform variant matrix at the bottom.
+- **`tests/smoke.sh`**: section 1b validates each variant's required file set. Asserts that the Vercel and Coolify `ci.yml` templates do NOT contain a `run: npm run build` step (the regex skips comment lines so the explanatory header doesn't false-positive). Asserts that the cloudbuild variant does NOT include `ci.yml.template`.
+
+### Changed
+
+- **`README.md`**: "What you get" table mentions per-platform L3 overlays. The 30-second use section now points users at the variant matrix in `SKILL.md`.
+- **`docs/CONSUMERS.md`**: "Pipeline source" column now also tracks deploy platform per consumer (vercel / coolify / cloudbuild / gha) and a "Recommended variant" column flagging the migration target for each `nextjs-prisma` consumer currently on the baseline.
+
+### Backwards compatibility
+
+- The baseline `templates/L3-pipeline/nextjs-prisma/` directory is **unchanged** and remains the default for repos that build inside GitHub Actions (no external deploy platform). All three existing synced consumers continue to validate against their existing manifests — this release adds variants, it doesn't remove the baseline.
+- Migration from baseline → platform variant is **manual** and a one-time op per repo. The sync skill flags it as "behind" only if the consumer's manifest references the new variant; staying on the baseline is a valid configuration. Each variant's README has a "Migrating from baseline" section walking the diff.
+- New consumer bootstraps default to detecting the platform; if detection is ambiguous or unknown, the skill asks. Choosing "GitHub Actions / unknown / other" preserves the previous behavior.
+- `nextjs` (no Prisma) and `node-generic` stacks do NOT yet have platform variants. They fall back to the baseline; future releases may add them when there's demand.
+
+### Drift implications for existing consumers
+
+- `zest` (Coolify): currently on baseline. Variant migration to `nextjs-prisma-coolify/` would delete `preview-smoke.yml` + `visual-diff.yml` and remove the build step from `ci.yml`. Recommended.
+- `localeloop` (Vercel): currently on baseline. Variant migration to `nextjs-prisma-vercel/` would replace the URL-pattern preview-smoke with the wait-for-vercel-preview action and drop the build step. Recommended.
+- `colab` (Cloud Build): workflows excluded from manifest entirely (already migrated to Cloud Build). No drift action needed; future re-onboarding could pick up `nextjs-prisma-cloudbuild/` cleanly.
+
 ## [0.4.0] — 2026-05-21
 
 First "drift-up" release. The pipeline harvested a hardened `role-architect.md` from a real production retro back into the templates. Until 0.4.0 every release pushed templates one-way (pipeline → consumer); this is the first release where a consumer repo's hard-won lesson flowed back into the canonical pipeline. The pattern proves the design works as a two-way contract.

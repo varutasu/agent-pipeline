@@ -10,7 +10,7 @@ A 3-layer system for AI-collaborative coding in [Cursor](https://cursor.com). On
 | --- | --- | --- |
 | **L1 — Context** | `AGENTS.md`, `.cursor/rules/*.mdc`, `.cursor/skills/*/SKILL.md`, optional Prisma schema map | Per-repo |
 | **L2 — Roles** | 9 subagent role configs (Conductor → IA → UX → Architect → Implementer → Reviewer → Design/A11y auditors → Doc Writer) | Per-repo `.cursor/agents/` |
-| **L3 — Pipeline** | CI workflows, PR template, CODEOWNERS, `.convoys/` folder, feature-flag wrapper, worktree helper, optional drift-detection workflow | Per-repo `.github/`, `.convoys/`, `lib/flags/` |
+| **L3 — Pipeline** | CI workflows tuned to your deploy platform (Vercel / Coolify / Cloud Build / GitHub Actions), PR template, CODEOWNERS, `.convoys/` folder, feature-flag wrapper, worktree helper, optional drift-detection workflow | Per-repo `.github/`, `.convoys/`, `lib/flags/` |
 | **Manifest + sync** | `.agent-context-manifest.yml` tracks installed artifacts; `sync-agent-context` skill applies pipeline updates per-file | Per-repo manifest + per-machine skill |
 | **Analytics** | Convoy event log + Cursor transcript miner + static HTML dashboard | Per-machine `~/agent-pipeline-data/` |
 
@@ -32,7 +32,7 @@ In Cursor, open any repo and ask:
 
 > *"Bootstrap agent context for this repo."*
 
-The skill detects your stack (Next.js+Prisma / Next.js / Node generic), asks which layers to install, drafts every artifact, writes a `.agent-context-manifest.yml` listing what it installed, and stops for review. Typical run: 5–10 minutes wall-clock, ~24 files written, no commits made.
+The skill detects your stack (Next.js+Prisma / Next.js / Node generic) and your deploy platform (Vercel / Coolify / Cloud Build / GitHub Actions), asks which layers to install, drafts every artifact (CI is tailored to the platform — no duplicate `npm run build` if Vercel/Coolify/Cloud Build is already doing it), writes a `.agent-context-manifest.yml` listing what it installed, and stops for review. Typical run: 5–10 minutes wall-clock, ~24 files written, no commits made.
 
 Later, to pull pipeline updates into a bootstrapped repo without losing local edits:
 
