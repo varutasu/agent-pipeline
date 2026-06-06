@@ -102,10 +102,19 @@ cross_brief_commitments:
 7. Build the test plan, linking existing test files as examples.
 8. Identify risks. Be specific (e.g. *"Existing `getBookmarks()` query joins `_count`; adding to the page query may cause N+1 if not memoized"*).
 9. Decompose into briefs. Aim for **<400 LOC per brief** and **independent files per brief** (parallelizable). Sequence dependencies explicitly.
-10. Write each brief file.
+10. Write each brief file. **Files are source of truth.**
 11. **Boot the brief** (see [Boot-the-brief check](#boot-the-brief-check) below) — verify each brief's verbatim code shapes against reality before declaring the architecture complete.
 12. Append the Architecture section to the convoy file.
-13. Print: *"Architecture complete. <N> briefs created. Estimated PRs: <N>. Awaiting human gate 1 (plan approval) before implementers run."*
+13. **Echodo bridge** (optional; skip if `.cursor/agents/echodo.config.json` does not exist):
+    - Read the convoy's `echodo_id` from `.convoys/<slug>.md` frontmatter (set by role-conductor in step 5 of that role).
+    - If no `echodo_id` is set (Conductor's bridge call failed): skip Echodo for now; document this in the hand-off so the user can reconcile later.
+    - Otherwise, for each brief file `brief-<N>-*.md` just written:
+       - Call MCP tool `create_brief({convoyId: echodo_id, briefNumber: N, title, filesAllowlist, dependsOn, acceptanceCriteria, briefMarkdown})`.
+       - On failure, append to `.convoys/.pending-mcp-sync.jsonl` and continue.
+    - After all briefs are created (or queued), call MCP tool `transition_convoy_status({convoyId: echodo_id, toStatus: "convoy_review", actor: "role-architect"})`.
+       - On failure, append to `.convoys/.pending-mcp-sync.jsonl` and continue.
+    - Mirror the same status transition in the local file by appending a line to the convoy's `## Status log` section.
+14. Print: *"Architecture complete. <N> briefs created. Estimated PRs: <N>. Awaiting human gate 1 (plan approval) before implementers run."* If the Echodo bridge step queued any calls, add: *"(<N> Echodo calls queued — replay via reconcile_from_files)"*.
 
 ## Hand-off
 

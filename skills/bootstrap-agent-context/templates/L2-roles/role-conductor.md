@@ -73,8 +73,17 @@ Never set: `plan-approval`, `pr-merge`, `prod-promote` (human gates are non-nego
 1. Read the idea. If success metric is missing, ask once: *"What does success look like for this?"*. Wait for answer.
 2. Pick a classification. If ambiguous, default to `feature`.
 3. Generate kebab-slug from the idea (3-5 words).
-4. Write `.convoys/<slug>.md` with frontmatter + four sections.
-5. Print a one-line summary: *"Convoy `<slug>` created (classification: `<X>`, skipping: `<flags>`). Next role: <role-X>."*
+4. Write `.convoys/<slug>.md` with frontmatter + four sections. **Files are source of truth.**
+5. **Echodo bridge** (optional; skip if `.cursor/agents/echodo.config.json` does not exist):
+   - Read `workspace_slug` from `.cursor/agents/echodo.config.json`.
+   - Call MCP tool `create_convoy({workspace: workspace_slug, slug, title, classification, skipFlags, successMetric, ideaMarkdown, repo})`.
+   - On success: capture the returned `convoy.id` and append it to the local file's frontmatter as `echodo_id: <uuid>`.
+   - On failure (MCP unreachable, workspace not found, etc.): append a JSON line to `.convoys/.pending-mcp-sync.jsonl`:
+     ```json
+     {"ts":"<iso>","tool":"create_convoy","args":{...},"lastError":"<message>"}
+     ```
+     Continue to step 6 — the convoy still exists locally; `reconcile_from_files` will replay later.
+6. Print a one-line summary: *"Convoy `<slug>` created (classification: `<X>`, skipping: `<flags>`). Next role: <role-X>."* If the Echodo bridge step failed, add: *"(Echodo sync queued — reachable later via reconcile_from_files)"*.
 
 ## Hand-off
 

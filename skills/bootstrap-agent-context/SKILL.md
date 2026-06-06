@@ -196,6 +196,44 @@ Common candidates: `add-api-route`, `add-component`, `add-page`, `add-prisma-mod
 
 Copy `templates/L1-context/agent-context-readme.md.template`. Documents the layers in this repo and who edits what.
 
+#### 2g. Design-domain skills (multi-select, optional)
+
+Ten domain skills adapted from cuellarfr/design-skills (MIT) ship at agent-pipeline's `skills/<name>/`. Each is a self-contained directory (`SKILL.md` + `references/` + `templates/`) installed verbatim into the consumer's `.cursor/skills/<name>/`. They work standalone; Phase 2b adds an Echodo MCP fallback for the deliverable templates.
+
+Prompt the user once:
+
+```
+Which design-domain skills should this repo install? (multi-select)
+
+Wave 1a — audit-aligned (recommended for any UI-shipping repo):
+  [x] accessibility-audit       (WCAG 2.2, severity 0-4, paired with role-a11y-auditor)
+  [x] design-critique           (Nielsen 10 + UX laws, paired with role-ux-reviewer)
+  [x] design-systems            (token + component + governance maturity, paired with role-design-system-auditor)
+
+Wave 1b — upstream / research (parallel-safe; ships v0.4.0):
+  [ ] ux-research               (generative + evaluative + continuous discovery)
+  [ ] journey-mapping           (current vs future state, opportunity mapping)
+  [ ] ux-strategy               (problem framing, KPIs, prioritization)
+
+Wave 1c — output craft + ops (parallel-safe; ships v0.4.0):
+  [ ] interaction-design        (motion, micro-interactions, state machines)
+  [ ] ux-writing                (voice, error copy, microcopy)
+  [ ] design-elevation          (visual polish, hierarchy, taste)
+  [ ] design-ops-handoff        (Figma → code, specs, redlines)
+```
+
+Default: **wave 1a checked, others unchecked**. Selecting all 10 is one keystroke ("a" / select-all).
+
+Per skill chosen:
+
+1. Copy `agent-pipeline/skills/<name>/` → consumer `.cursor/skills/<name>/` verbatim. **Don't customize the SKILL.md** — these are versioned + tracked in the manifest.
+2. Record in `.agent-context-manifest.yml` under `artifacts:` with `customized: false`.
+3. Verify the corresponding L2 role file references the skill (audit-aligned skills are referenced by `role-a11y-auditor`, `role-ux-reviewer`, `role-design-system-auditor` respectively).
+
+**Phase 1a status (v0.4.0-beta.1):** `accessibility-audit`, `design-critique`, `design-systems` exist + are installable. The other 7 are placeholders for Phase 1b/1c; checking them surfaces a "(not yet implemented — coming in v0.4.0)" notice and skips that line. Stub the entries so the user's selection is preserved when 1b/1c land via `sync-agent-context`.
+
+Attribution: every installed `SKILL.md` already carries the cuellarfr/design-skills MIT header. Don't strip it.
+
 ### Step 3: L2 — Subagent roles
 
 Skip this step if the user opted out of L2.

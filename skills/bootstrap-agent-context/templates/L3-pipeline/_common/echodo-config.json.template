@@ -1,0 +1,31 @@
+{
+  "$schema": "https://agent-pipeline.varutasu.dev/schemas/echodo-config.v1.json",
+  "_comment": "Per-repo Echodo bridge config. Installed by bootstrap-agent-context when the user opts in to Echodo integration. Read by both .cursor/mcp.json (Cursor MCP registration) and L2 role files (workspace slug + fallback policy). See agent-pipeline/.cursor/plans/pipeline_v0.4_design_+_echodo_54a3bdb7.plan.md §7.7.",
+  "mcp_endpoint": {
+    "transport": "stdio",
+    "_transport_note": "v0.4 ships stdio only. Phase 4 may add HTTP/SSE transport when the Echodo workers need persistent connections.",
+    "command": "<COMMAND>",
+    "_command_examples": [
+      "node + path: 'node' with args ['/absolute/path/to/tasks/apps/mcp-server/dist/index.js']",
+      "pnpm filter (dev): 'pnpm' with args ['-s', '--filter', '@tasks/mcp-server', 'mcp'] — requires cwd to be the tasks repo root"
+    ],
+    "args": ["<ARG_1>", "<ARG_2>"],
+    "env": {
+      "DATABASE_URL": "${ECHODO_DATABASE_URL}",
+      "_env_note": "ECHODO_DATABASE_URL must be exported in your shell or set in ~/.cursor/mcp.json env block. Never commit a real URL to this file — the substitution syntax (${VAR}) is resolved by the MCP host."
+    }
+  },
+  "workspace_slug": "<CONVOYS_WORKSPACE_SLUG>",
+  "_workspace_slug_note": "One workspace per consuming repo. Convention: 'convoys-<repo-slug>'. Examples: 'convoys-tasks', 'convoys-zest', 'convoys-colab', 'convoys-tcg-vault'. Workspace creation is manual via the Echodo UI (echodo.stillwell.cloud) before any role calls create_convoy.",
+  "fallback": {
+    "on_unreachable": "local-only",
+    "_on_unreachable_note": "If the MCP server can't be reached: 'local-only' = write .convoys/*.md files and queue MCP calls to .convoys/.pending-mcp-sync.jsonl for later replay by reconcile_from_files. 'fail' = abort the role. 'local-only' is the §7.6 local-first default.",
+    "on_error": "local-only-with-warning",
+    "_on_error_note": "Same options as on_unreachable, plus 'local-only-with-warning' = log a warning in the role's hand-off but continue."
+  },
+  "_install_checklist": [
+    "Echodo workspace exists at echodo.stillwell.cloud (slug matches workspace_slug above)",
+    "ECHODO_DATABASE_URL exported in shell or set in ~/.cursor/mcp.json",
+    "MCP server build produced (pnpm --filter @tasks/mcp-server build) — required for the 'node /path/to/dist/index.js' transport; not needed for the 'pnpm filter' dev transport"
+  ]
+}
