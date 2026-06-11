@@ -1,16 +1,16 @@
 # Executive summary — agent-pipeline v0.4 → v0.6
 
-**Status as of 2026-06-05:** plan locked, baselines captured, ready to execute.
-**Source plan:** [`/.cursor/plans/pipeline_v0.4_design_+_echodo_54a3bdb7.plan.md`](../.cursor/plans/pipeline_v0.4_design_+_echodo_54a3bdb7.plan.md) (1,200+ lines, exhaustive).
+**Status as of 2026-06-11 (updated post-experiment):** Phase 1a ready to ship. Phase 2a (Echodo bridge) **descoped** per measured kill criteria. See [`docs/PHASE-2A-DESCOPE.md`](PHASE-2A-DESCOPE.md) for the rationale.
+**Source plan:** [`/.cursor/plans/pipeline_v0.4_design_+_echodo_54a3bdb7.plan.md`](../.cursor/plans/pipeline_v0.4_design_+_echodo_54a3bdb7.plan.md) (1,200+ lines, exhaustive — predates descope).
 **This doc:** the one-pager you can re-read in 3 months when context has decayed.
 
 ---
 
-## The pitch in three lines
+## The pitch in three lines (revised)
 
-1. Today the pipeline gives agents **structure** (L1 rules, L2 roles, L3 workflows) — but the human still drives via GitHub PRs and big Cursor chats.
-2. v0.4 makes **Echodo (the `tasks` repo) the human-facing surface** so convoys, briefs, and audits are managed by an MCP-aware UI you own, not by GitHub comments.
-3. v0.5–v0.6 closes the loop: artifact quality → convoy retros → self-improvement → upstream PRs back to this repo. The pipeline starts improving itself.
+1. Today the pipeline gives agents **structure** (L1 rules, L2 roles, L3 workflows) and is producing real PRs — 8 merged on tcg-vault in the Jun 5-11 experiment window alone, all file-only.
+2. v0.4 ships **the design-skills layer** (Phase 1a: 3 audit-aligned skills + slim audit roles) so role-a11y-auditor, role-ux-reviewer, and role-design-system-auditor become real instead of stub.
+3. v0.5+ ships **self-improvement** (Phases 6/7/8: artifact quality → retros → upstream PRs back to this repo). The Echodo bridge (Phase 2a) is deferred until a real web-UI demand emerges; today's file-only convoys are working.
 
 If only one paragraph fits on the page, it's that one.
 
@@ -30,25 +30,28 @@ If only one paragraph fits on the page, it's that one.
 
 ---
 
-## What ships when
+## What ships when — revised after Jun 11 experiment
 
 ```
-v0.4.0-beta.1 ─── ship Phase 0 + 1a + 2a, then RUN THE EXPERIMENT
-                  └─ if 3-of-5 succeed → continue
-                                       └─ no → descope per §11
+v0.4.0          ─── Phase 0 (planning) + Phase 1a (3 audit skills + slim roles) + tcg-vault Phase 3
+                    (self-hosted runner, shipped opportunistically as PR #132)
+                    ── DESCOPED: Phase 2a (Echodo MCP bridge); kept on branch for reversal
 
-v0.4.0 ─────────── Phase 1b + 1c + 2b (the other 7 design skills + deliverable templates)
+v0.4.1 (next)   ─── Restore + harden the metrics shim (tcg-vault feat/restore-convoy-metrics-gate).
+                    Highest-leverage item: without it, no signal, no kill criteria.
 
-v0.5.0 ─────────── Phase 3 (self-hosted runner) + Phase 4 (Echodo workers + GitHub App)
+v0.5.0          ─── Phase 1b + 1c (7 more design skills) — GATED on metrics being reliable
+                    Phase 6: artifact quality role
 
-v0.5.1 ─────────── Phase 6: artifact quality role (review/edit/audit before every human gate)
-v0.5.2 ─────────── Phase 7: convoy retros + retro templates per classification
-v0.6.0 ─────────── Phase 8: self-improvement loop + upstream-courier role → PRs back to agent-pipeline
+v0.5.x          ─── Phase 7: convoy retros + retro templates per classification
 
-v0.5+ ──────────── Phase 5: polish (opinionated defaults, examples, sync lint mode)
+v0.6.0          ─── Phase 8: self-improvement loop + upstream-courier → PRs back to agent-pipeline
+                    Phase 2a (Echodo bridge) reopens IF web-UI demand emerges
+
+v0.5+           ─── Phase 5: polish (opinionated defaults, examples, sync lint mode)
 ```
 
-Everything new is **opt-in** at the repo level (manifest flags). zest, tcg-vault, tavernlight don't get forced upgrades.
+Original v0.4 plan assumed Phase 2a would unlock measurable token savings. Actual experiment shows the pipeline is already saving prompts + driving better tool ratios *without* the bridge. Reordering accordingly. Everything new is still **opt-in** at the repo level (manifest flags).
 
 ---
 
@@ -103,10 +106,10 @@ That's the destination. v0.4–v0.6 is the road.
 
 ---
 
-## Next 3 concrete actions
+## Next 3 concrete actions (revised 2026-06-11)
 
-1. **(user, 5 min):** Create `convoys-tasks` workspace in Echodo at `echodo.stillwell.cloud` so Phase 2a has a target.
-2. **(agent, 30 min):** Bootstrap the `tasks` repo to L2 + L3 + write `.agent-context-manifest.yml` (it's a partial consumer today). Promote to `synced` in `CONSUMERS.md`.
-3. **(agent, 1 hr):** Open feature branches `feat/agent-pipeline-bridge` on `tasks` and `feat/echodo-surface-variant` on `agent-pipeline` and stub out the 6 lifecycle MCP tools listed in Phase 2a.
+1. **(user, 5 min):** Review + merge `feat/restore-convoy-metrics-gate` on tcg-vault — un-gitignores `.metrics.jsonl`, adds CI gate failing convoy PRs without telemetry rows. This is the single highest-leverage item in the pipeline right now (without it, no kill criteria, no improvement loop).
+2. **(user, 5 min):** Review + merge `feat/phase-1a-design-skills` on agent-pipeline — ships the 3 audit skills + slim audit roles. Real value, zero coupling to Phase 2a.
+3. **(user, 5 min):** Close `feat/agent-pipeline-bridge` (tasks repo) with a link to `docs/PHASE-2A-DESCOPE.md`. The branch stays in git history; reopen when there's an Echodo web-UI demand.
 
-After those three, the first real convoy can run.
+The 5-convoy experiment didn't run as designed. What ran instead — 8 merged PRs in a week, file-only, all driven by the existing L1/L2/L3 layer — was the experiment, and the data is in [`analytics/v0.4-beta1-results.md`](../analytics/v0.4-beta1-results.md) §Observational data.
