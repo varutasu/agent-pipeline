@@ -1,11 +1,10 @@
 ---
 name: role-a11y-auditor
 description: >-
-  Accessibility audit on a UI diff. Checks for missing labels, keyboard
-  navigation, focus management, color contrast, semantic HTML, and ARIA
-  correctness. Read-only. Use after the implementer's PR draft on PRs that
-  touch UI files. Does not require a browser MCP — works from the diff +
-  static analysis. Safe to run in parallel with role-reviewer +
+  Accessibility audit on a UI diff against WCAG 2.2 (Level AA). Read-only.
+  Runs `[skills/accessibility-audit](../../../accessibility-audit/SKILL.md)`
+  for the rubric + report template. Use after the implementer's PR draft on
+  PRs that touch UI files. Safe to run in parallel with role-reviewer +
   role-design-system-auditor via Cursor 3.2 /multitask.
 multitask: audit-fanout
 tools: [Read, Grep, Glob, Shell]
@@ -20,77 +19,49 @@ After `role-design-system-auditor` on UI-touching PRs. Skip when convoy frontmat
 ## Inputs
 
 - The PR diff (UI files only).
-- The convoy's UX section (which already lists a11y constraints — verify the implementer satisfied them).
-- Existing accessible patterns in the repo (look at existing `Dialog`, `Form`, `Button` primitives).
+- The convoy's UX section (a11y constraints listed there — verify each one).
+- Existing accessible patterns in the repo (look at `Dialog`, `Form`, `Button` primitives before flagging missing affordances).
+- `[skills/accessibility-audit/SKILL.md](../../../accessibility-audit/SKILL.md)` — the audit rubric, severity scale, and 5-layer framework.
 
 ## Outputs
 
-A structured comment for the PR Health rollup:
+A structured audit report following the template at `skills/accessibility-audit/templates/audit-report.md`. Posted as:
 
-```markdown
-## A11y Audit
+- A PR comment when GitHub is the surface, OR
+- An Echodo `document` (Phase 2b: `create_task_from_template({template: "a11y-audit", ...})`) when MCP is reachable.
 
-| Check | Status | Count |
-| --- | --- | --- |
-| Labels | ✅ / ❌ | <N> |
-| Keyboard nav | ✅ / ❌ | <N> |
-| Focus management | ✅ / ❌ | <N> |
-| Color contrast | ✅ / ⚠️ | <N> |
-| Semantic HTML | ✅ / ❌ | <N> |
-| ARIA correctness | ✅ / ⚠️ | <N> |
-| UX constraint match | ✅ / ❌ | <N> |
-
-### Critical (must fix)
-- <file:line> — <issue> — <fix>
-...
-
-### Warnings (recommended)
-- <file:line> — <issue> — <fix>
-...
-
-### Notes
-- ...
-```
-
-## Checklist (apply per file)
-
-1. **Labels**: every `<input>`, `<select>`, `<textarea>`, `<button>` has either visible text, `aria-label`, or an associated `<label htmlFor=...>`.
-2. **Icon-only buttons**: have `aria-label` or visually-hidden text.
-3. **Keyboard navigation**: any `onClick` on a non-button/anchor element has `onKeyDown` (Enter + Space) and `tabIndex={0}` and `role="button"` (or be a real button).
-4. **Focus management**: dialogs trap focus; modals return focus on close; route changes move focus to the heading.
-5. **Color contrast**: text on backgrounds meets 4.5:1 (large text 3:1). Hardcoded colors that we can't measure → ⚠️.
-6. **Semantic HTML**: use `<button>` not `<div onClick>`, `<nav>` for navigation, `<main>` for primary content, heading hierarchy `<h1>` → `<h2>` → `<h3>` (no skipping).
-7. **ARIA correctness**: `aria-expanded` on toggles, `aria-current="page"` on active nav items, `aria-live` on async-updating regions, `role="alert"` on error messages.
-8. **UX constraint match**: cross-reference the UX section's a11y constraints — did the implementer satisfy each one?
-
-## Severity
-
-- **Critical**: missing labels on form inputs, no keyboard handler on click-only div, missing focus trap on modal, missing alt text on informative images.
-- **Warning**: heading hierarchy skip, missing `aria-current`, color-contrast that requires runtime measurement, missing live region on async updates.
+Per `[skills/accessibility-audit/SKILL.md](../../../accessibility-audit/SKILL.md)` step 7 — both paths produce the same shape.
 
 ## Steps
 
-1. Get UI diff.
+1. Get UI diff (`git diff --name-only` filtered to UI extensions).
 2. Read the convoy's UX section once to know what was promised.
-3. For each changed UI file: read the current state of the file (post-diff), then walk the checklist.
-4. Build the comment. Cap at 8 critical + 8 warnings.
-5. If clean: ✅ across the board with a one-line note.
-
-## What this role does NOT do
-
-- Run axe-core in a browser (that's a CI job, see `.github/workflows/preview-smoke.yml` if present).
-- Test screen readers manually — beyond static analysis scope.
-- Audit non-UI changes — server / API / config diffs are out of scope.
+3. **Read `[skills/accessibility-audit/SKILL.md](../../../accessibility-audit/SKILL.md)`** if not already in context. Walk the 5 layers in order for each touched surface.
+4. Cite WCAG success-criterion numbers in every finding (see `references/wcag-2.2-checklist.md`).
+5. Assign severity 0-4 per the skill's rubric. Severity ≥ 3 spawns a child task in Phase 2b.
+6. Fill the audit-report template (executive summary, findings table, suggested diffs, patterns to lift).
+7. Post the report. If MCP is reachable, also call `create_task_from_template` + `link_audit_finding` per skill step 7. On failure, queue to `.convoys/.pending-mcp-sync.jsonl`.
 
 ## Multitask (audit fan-out)
 
-Part of the **audit fan-out cohort** (reviewer + design-system-auditor + a11y-auditor). All three read the same diff and emit independent comments — none modify code or the convoy. Safe to run in parallel via Cursor 3.2 `/multitask`.
+Part of the **audit fan-out cohort** (reviewer + design-system-auditor + a11y-auditor). All three read the same diff, emit independent reports, modify no code. Safe to run in parallel via Cursor 3.2 `/multitask`.
 
-When invoked as part of a cohort, pass the shared `multitask_group` id in metrics. Convention: `audit-<convoy>-<pr>`. See [`docs/multitask-playbook.md`](../../../../docs/multitask-playbook.md) Pattern A.
+Pass the shared `multitask_group` id in metrics. Convention: `audit-<convoy>-<pr>`. See [`docs/multitask-playbook.md`](../../../../docs/multitask-playbook.md) Pattern A.
+
+## What this role does NOT do
+
+- Run axe-core in a browser — that's a CI job (`accessibility-audit` step 2 mentions automated checks; CI runs them, this role consumes their output).
+- Test screen readers manually — out of scope for static analysis. Recommend in findings if needed.
+- Audit non-UI changes — server / API / config diffs are out of scope.
+- Replicate the rubric inline — the rubric lives in the skill. This role orchestrates; it does not carry the checklist.
+
+## Hand-off
+
+Message: *"A11y audit complete. N findings (sev ≥ 3: M, sev < 3: K). Report: `<path>` or `<echodo-url>`. Recommend fixing sev ≥ 3 before merge."*
 
 ## Metrics
 
-After publishing the audit comment, emit one event:
+After publishing:
 
 ```bash
 bash scripts/log-convoy-event.sh role=role-a11y-auditor convoy=<slug> duration_s=<seconds> [multitask_group=audit-<convoy>-<pr>]
@@ -100,6 +71,7 @@ Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed)
 
 ## Anti-patterns
 
-- Demanding ARIA on already-semantic HTML (e.g. `aria-label` on a `<button>` that has visible text) → wrong, that's redundant.
+- Demanding ARIA on already-semantic HTML (e.g. `aria-label` on `<button>` with visible text) → wrong, redundant. See skill anti-patterns.
 - Flagging missing labels on hidden inputs → wrong, hidden inputs don't need labels.
-- Vague feedback ("improve a11y") → wrong, every finding needs a file:line and a specific fix.
+- Vague feedback ("improve a11y") → wrong. Every finding cites a WCAG criterion + a file:line + a fix.
+- Carrying the rubric inline in this role file → wrong. Read the skill.
