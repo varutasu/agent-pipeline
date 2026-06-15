@@ -4,6 +4,21 @@ All notable changes to `agent-pipeline` are documented here. This file follows [
 
 ## [Unreleased]
 
+### Added — `templates/L3-pipeline/_common/`
+
+- **`convoy-metrics-gate.yml.template`** (NEW). PR gate workflow that fails `convoy:`-prefixed PRs which do NOT add a row to `.convoys/.metrics.jsonl`. Pairs with the existing `log-convoy-event.sh`. Bypass via `skip-metrics` label. Source: this pattern was installed directly on `tcg-vault` in June after a retro finding (Jun 5-11 window: 8 convoy PRs shipped without telemetry rows despite the L2 role files telling them to call the shim). The gate caught 0 violations after install — by the time it was live, role compliance had already snapped back. Lifting the workflow into the pipeline installer makes it available to future consumers and downstream forks (including [`tux_fs-agent-pipeline`](https://github.com/rstillwell-trimb/tux_fs-agent-pipeline) which independently shipped this in `v0.1.7-trimble`).
+- **`pre-push-gh-account.sh.template`** (NEW). Optional `.git/hooks/pre-push` template for users juggling multiple `gh` CLI identities (e.g. `varutasu` for personal + `rstillwell-trimb` for work, or any equivalent). Substitute `__GH_ACCOUNT__` with the gh username that owns the repo's remote. Idempotent — no-op if right account is already active. Affects `gh` CLI ops only (not the git push itself; that uses SSH/HTTPS credentials independent of `gh auth`). Source: developed during the same Jun 11 retro after repeated `gh auth` mismatches across personal repos.
+
+### Changed — `skills/bootstrap-agent-context/SKILL.md`
+
+- Step 4a (Common files table): two new rows for the templates above, with installation notes (un-gitignore `.convoys/.metrics.jsonl` if installing the metrics gate; install the hook only if multi-account).
+- Final layout diagram: `_common/` count updated from 5 → 7 files.
+
+### Notes
+
+- Both templates are opt-in. Bootstrap-agent-context's existing prompts already let the user skip individual common-files; these are added to that list, not made required.
+- The hook template is NOT auto-installed by the bootstrap skill — it lives under `templates/` for reference, and the SKILL.md tells installers to copy + substitute manually. Hooks live outside `.git/`'s version control so a template installer can't be fully automatic without scaffolding a helper script (out of scope for this commit; see future "scripts/install-hooks.sh" idea in #issues).
+
 ## [0.5.0] — 2026-05-22
 
 Per-platform L3 overlays. Through 0.4.0 every consumer used the same `nextjs-prisma/` L3 directory regardless of where the app actually deployed (Vercel, Coolify, Cloud Build, etc.). On every PR the `ci.yml` ran `npm run build` while Vercel/Coolify/Cloud Build *also* ran their own build. Three to five minutes of duplicate work, every push, paid for in GitHub Actions minutes (or, in colab's case, a hard-stopped budget). This release ships three deploy-platform-specific L3 variants that drop the duplicated build step and tune preview-smoke + visual-diff to whatever the deploy platform exposes.

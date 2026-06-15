@@ -302,6 +302,8 @@ Skip this step if the user opted out of L3 OR if stack class is `non-node`.
 | `templates/L3-pipeline/_common/wt.sh` | `scripts/wt.sh` (deprecated in Cursor 3.2+; the stub prints a pointer to the Agents Window worktree feature. Mark executable: `chmod +x scripts/wt.sh`. Tell the user this is a fallback only — prefer Cursor's native worktrees) |
 | `templates/L3-pipeline/_common/log-convoy-event.sh` | `scripts/log-convoy-event.sh` (mark executable; powers self-analytics — L2 roles call this on each invocation. Add `.convoys/.metrics.jsonl` to `.gitignore` unless the user opts in to commit metrics) |
 | `templates/L3-pipeline/_common/agent-context-drift.yml.template` | `.github/workflows/agent-context-drift.yml` (weekly cron + manual trigger; opens an issue when this repo falls behind the pipeline. Tell the user: skip this file if you don't want passive drift monitoring) |
+| `templates/L3-pipeline/_common/convoy-metrics-gate.yml.template` | `.github/workflows/convoy-metrics-gate.yml` (PR gate; fails `convoy:`-prefixed PRs that don't add a row to `.convoys/.metrics.jsonl`. Pairs with `log-convoy-event.sh` above. Tell the user: install this only if you also un-gitignore `.convoys/.metrics.jsonl` — the gate is useless if the file isn't committed. Bypass label: `skip-metrics`) |
+| `templates/L3-pipeline/_common/pre-push-gh-account.sh.template` | `.git/hooks/pre-push` (not version-controlled — copy locally and `chmod +x`; substitute `__GH_ACCOUNT__` with the gh username that owns this repo's remote. Use this only if you switch between multiple gh identities — otherwise it's a no-op. Affects `gh` CLI commands, not the git push itself) |
 
 #### 4b. Stack-variant files
 
@@ -531,12 +533,14 @@ templates/
 │   ├── role-a11y-auditor.md
 │   └── role-doc-writer.md
 └── L3-pipeline/                             (per-stack)
-    ├── _common/                             (5 files; all stacks)
+    ├── _common/                             (7 files; all stacks)
     │   ├── PULL_REQUEST_TEMPLATE.md.template
     │   ├── convoys-readme.md.template       (mentions Cursor 3.2 worktrees + multitask)
     │   ├── wt.sh                            (Cursor 3.2 deprecation stub; prints pointer to Agents Window worktrees)
     │   ├── log-convoy-event.sh              (powers self-analytics — L2 roles call this; supports multitask_group cohort field)
-    │   └── agent-context-drift.yml.template (weekly cron; opens issue when manifest is behind upstream pipeline)
+    │   ├── agent-context-drift.yml.template (weekly cron; opens issue when manifest is behind upstream pipeline)
+    │   ├── convoy-metrics-gate.yml.template (PR gate; fails convoy: PRs that skip telemetry logging)
+    │   └── pre-push-gh-account.sh.template  (optional .git/hooks/ helper for multi-account gh CLI users)
     ├── nextjs-prisma/                       (7 files; baseline — GHA does the build)
     │   ├── README.md
     │   ├── ci.yml.template                   (lint + types + build + test + schema-map)

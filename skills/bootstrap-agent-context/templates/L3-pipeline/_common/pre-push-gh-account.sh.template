@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Pre-push hook template: auto-switch gh CLI active account before push.
+#
+# Source: skills/bootstrap-agent-context/templates/L3-pipeline/_common/pre-push-gh-account.sh.template
+# Install to: .git/hooks/pre-push (and chmod +x)
+#
+# Why this exists:
+#   Cursor users frequently work across multiple GitHub identities (e.g.
+#   personal `rstillwell-trimb` + work `varutasu`, or `<work-handle>` +
+#   `<personal-handle>`). The `gh` CLI has a single GLOBAL active account
+#   regardless of which repo you're in. When the active account doesn't
+#   match the repo's owner, `gh pr create`, `gh issue list`, etc. fail
+#   with cryptic "Repository not found" errors.
+#
+#   This hook makes the per-repo gh account deterministic: before any push,
+#   switch the active account to whatever this repo expects. Idempotent:
+#   no-op if the right account is already active.
+#
+# IMPORTANT: This hook affects `gh` CLI operations (`gh pr create`,
+# `gh issue list`, etc.). It does NOT affect the git push itself —
+# that uses SSH keys or HTTPS credentials, which are independent of
+# `gh auth`. The hook is here so that any `gh` command run right after
+# a push (which is common: `git push && gh pr create`) lands on the
+# correct account.
+#
+# Install:
+#   1. Substitute __GH_ACCOUNT__ below with the gh username for this repo
+#      (the same username that appears in `gh auth status` for the
+#      account that has read/write access to this remote).
+#   2. Copy this file to .git/hooks/pre-push in the target repo.
+#   3. chmod +x .git/hooks/pre-push
+#
+# Uninstall: delete .git/hooks/pre-push.
+#
+# Per-account hook templates are easy to install in batch — see
+# scripts/install-hooks.sh in this repo (if present) for a multi-repo
+# helper.
+
+set -e
+TARGET="__GH_ACCOUNT__"
+
+if gh auth status 2>&1 | grep -B1 "Active account: true" | grep -q "$TARGET"; then
+  exit 0
+fi
+
+echo "[pre-push hook] Switching gh active account to '$TARGET' for this repo." >&2
+gh auth switch -u "$TARGET" >/dev/null 2>&1 || {
+  echo "[pre-push hook] ERROR: cannot switch to gh account '$TARGET'." >&2
+  echo "[pre-push hook] Run: gh auth login -h github.com -u $TARGET" >&2
+  exit 1
+}
