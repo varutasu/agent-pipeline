@@ -1,0 +1,103 @@
+# Convoy metrics gate template
+#
+# Source: skills/bootstrap-agent-context/templates/L3-pipeline/_common/convoy-metrics-gate.yml.template
+# Install to: .github/workflows/convoy-metrics-gate.yml
+#
+# What this gate enforces:
+#   PRs titled `convoy: ...` MUST add at least one new role-event row to
+#   .convoys/.metrics.jsonl. Without this gate, the pipeline produces
+#   work but no telemetry — and there's nothing to retro on, no signal
+#   for which roles are actually being invoked, no input for the L4
+#   self-improvement loop.
+#
+# Triggers: PRs whose title starts with `convoy:` (case-insensitive).
+# Bypass: add the `skip-metrics` label and document why in the PR body
+# (rare; for emergency hotfixes or genuinely metric-free convoys).
+#
+# Non-convoy PRs are a no-op for this gate.
+#
+# Prerequisites:
+#   - .convoys/.metrics.jsonl must be UN-gitignored at the repo root
+#     (it's typically in default .gitignore via .convoys/.metrics.*; remove
+#     that line so the file can be version-controlled).
+#   - scripts/log-convoy-event.sh (from L3-pipeline/_common/) must exist
+#     and be called by the L2 roles after each hand-off — see the
+#     "Metrics" section in each .cursor/agents/role-*.md.
+
+name: Convoy metrics gate
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  gate:
+    name: Require role-event telemetry on convoy PRs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect PR
+        id: inspect
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const title = pr.title || '';
+            const labels = (pr.labels || []).map(l => l.name);
+            const isConvoy = /^convoy:/i.test(title);
+            const hasBypass = labels.includes('skip-metrics');
+            core.setOutput('is_convoy', isConvoy ? 'true' : 'false');
+            core.setOutput('has_bypass', hasBypass ? 'true' : 'false');
+            core.info(`title="${title}" is_convoy=${isConvoy} has_bypass=${hasBypass}`);
+            if (hasBypass) {
+              core.warning(`skip-metrics label present on PR #${pr.number} — gate will exit early. Document the reason in the PR body.`);
+            }
+
+      - name: Skip — not a convoy PR
+        if: steps.inspect.outputs.is_convoy != 'true'
+        run: |
+          echo "PR title is not 'convoy:' — gate is no-op for this PR."
+
+      - name: Skip — bypass label present
+        if: steps.inspect.outputs.is_convoy == 'true' && steps.inspect.outputs.has_bypass == 'true'
+        run: |
+          echo "::warning::skip-metrics label bypass. Metrics gate not enforced for this PR."
+
+      - name: Checkout PR head
+        if: steps.inspect.outputs.is_convoy == 'true' && steps.inspect.outputs.has_bypass != 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify metrics rows added
+        if: steps.inspect.outputs.is_convoy == 'true' && steps.inspect.outputs.has_bypass != 'true'
+        run: |
+          set -euo pipefail
+
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          METRICS=".convoys/.metrics.jsonl"
+
+          if [ ! -f "$METRICS" ]; then
+            echo "::error::Convoy PR but $METRICS does not exist. The L2 roles must call scripts/log-convoy-event.sh after each hand-off — see .cursor/agents/role-*.md 'Metrics' sections."
+            exit 1
+          fi
+
+          ADDED_LINES=$(git diff "$BASE_SHA"..."$HEAD_SHA" -- "$METRICS" | grep -c '^+{' || true)
+
+          if [ "$ADDED_LINES" -eq 0 ]; then
+            echo "::error::Convoy PR did not add any rows to $METRICS."
+            echo "::error::Did the L2 roles call scripts/log-convoy-event.sh after their hand-off? See .cursor/agents/role-*.md 'Metrics' section."
+            echo "::error::To bypass intentionally (rare), add 'skip-metrics' label to the PR and document why in the PR body."
+            exit 1
+          fi
+
+          if ! git diff "$BASE_SHA"..."$HEAD_SHA" -- "$METRICS" | grep -q '"convoy"'; then
+            echo "::warning::Added lines do not appear to be well-formed JSON with a 'convoy' field. Verify scripts/log-convoy-event.sh ran cleanly."
+          fi
+
+          echo "::notice::Convoy metrics gate passed: $ADDED_LINES new role-event row(s) added to $METRICS."
