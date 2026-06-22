@@ -27,6 +27,9 @@ skip:
   - <flag1>
 status: open | in-progress | merged | shipped | abandoned
 created: <YYYY-MM-DD>
+model_policy:
+  default_session: auto
+  roles: { ... }   # see docs/model-routing-policy.md
 ---
 ```
 
@@ -117,5 +120,5 @@ npx tsx render-dashboard.ts
 open ~/agent-pipeline-data/dashboard.html
 ```
 
-Schema: [`analytics/schemas/convoy-event.json`](https://github.com/varutasu/agent-pipeline/blob/main/analytics/schemas/convoy-event.json).
+Schema: [`analytics/schemas/convoy-event.json`](https://github.com/varutasu/agent-pipeline/blob/main/analytics/schemas/convoy-event.json). Model tiers: [`docs/model-routing-policy.md`](https://github.com/varutasu/agent-pipeline/blob/main/docs/model-routing-policy.md).
 

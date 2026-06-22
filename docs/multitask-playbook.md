@@ -36,7 +36,7 @@ Or, equivalently, the user runs each one in three async subagents from the Agent
 ### Expected wins
 
 - ~3× wall-clock on the audit phase (the three roles were already independent; serializing them was an artifact of single-chat workflow).
-- Identical token cost (same diff, same context, same role logic).
+- **Lower token cost** when audit roles run on fast models (`composer-2.5-fast` per role frontmatter). Fan-out on Opus triples audit spend for the same diff — invoke roles from the Agents dropdown so `model:` applies. See [`model-routing-policy.md`](model-routing-policy.md).
 
 ### What stays sequential
 

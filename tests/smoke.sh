@@ -113,6 +113,12 @@ else
   fail "Missing L1 manifest template"
 fi
 
+if [ -f "$SKILL_DIR/templates/L1-context/model-routing.mdc.template" ]; then
+  ok "L1 model-routing template present"
+else
+  fail "Missing L1 model-routing.mdc.template"
+fi
+
 # sync-agent-context skill
 SYNC_SKILL=skills/sync-agent-context/SKILL.md
 if [ -f "$SYNC_SKILL" ]; then
@@ -170,6 +176,8 @@ for f in "$SKILL_DIR"/templates/L2-roles/role-*.md; do
   L=$(wc -l < "$f" | tr -d ' ')
   if [ "$L" -le 120 ]; then ok "$(basename "$f"): $L lines (≤120)"
   else warn "$(basename "$f"): $L lines (over 120)"; fi
+  if grep -q '^model:' "$f"; then ok "$(basename "$f"): model frontmatter present"
+  else fail "$(basename "$f"): missing model: frontmatter"; fi
 done
 
 # 4. Behavior -----------------------------------------------------------------
@@ -182,10 +190,11 @@ trap "rm -rf '$SMOKE_DIR'" EXIT
   cd "$SMOKE_DIR"
   git init -q
   bash "$OLDPWD/$SKILL_DIR/templates/L3-pipeline/_common/log-convoy-event.sh" \
-    role=role-conductor convoy=smoke-test classification=feature 'skip_flags=visual,smoke' duration_s=10 >/dev/null
+    role=role-conductor convoy=smoke-test classification=feature 'skip_flags=visual,smoke' duration_s=10 \
+    model=composer-2.5-fast model_tier=fast >/dev/null
 )
 if [ -s "$SMOKE_DIR/.convoys/.metrics.jsonl" ]; then
-  if python3 -c "import json,sys; ev=json.loads(open('$SMOKE_DIR/.convoys/.metrics.jsonl').read()); assert ev['role']=='role-conductor' and ev['convoy']=='smoke-test' and ev['skip_flags']==['visual','smoke']" 2>/dev/null; then
+  if python3 -c "import json,sys; ev=json.loads(open('$SMOKE_DIR/.convoys/.metrics.jsonl').read()); assert ev['role']=='role-conductor' and ev['convoy']=='smoke-test' and ev['skip_flags']==['visual','smoke'] and ev['model']=='composer-2.5-fast' and ev['model_tier']=='fast'" 2>/dev/null; then
     ok "log-convoy-event.sh: writes valid JSON with expected fields"
   else
     fail "log-convoy-event.sh output does not match schema"

@@ -7,6 +7,7 @@ description: >-
   before prod promote (gate 3). Skip when convoy frontmatter has skip: docs.
   Must run sequentially — writes a single docs PR.
 multitask: single
+model: auto
 tools: [Read, Grep, Glob, Edit, Write, Shell]
 ---
 
@@ -70,7 +71,7 @@ Docs PR opened. User reviews and merges as the final step before the release PR 
 After producing the docs PR draft, emit one event with the convoy outcome:
 
 ```bash
-bash scripts/log-convoy-event.sh role=role-doc-writer convoy=<slug> duration_s=<seconds> outcome=complete
+bash scripts/log-convoy-event.sh role=role-doc-writer convoy=<slug> duration_s=<seconds> outcome=complete model=auto model_tier=auto
 ```
 
 Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed).

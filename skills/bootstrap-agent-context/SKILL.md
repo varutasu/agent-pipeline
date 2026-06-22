@@ -168,6 +168,10 @@ Copy `templates/L1-context/no-go-zones.mdc`. Edit for this repo:
 - Add vendored or generated paths (`prisma/migrations/` if Prisma).
 - Drop sections that don't apply.
 
+#### 2b-ii. `.cursor/rules/model-routing.mdc` (always-apply)
+
+Copy `templates/L1-context/model-routing.mdc.template` → `.cursor/rules/model-routing.mdc`. Sets cost-aware default model tiers per pipeline role. Point to `docs/model-routing-policy.md` in the repo (copy from pipeline `docs/model-routing-policy.md` into `docs/agent-context/` or repo `docs/` — match where other pipeline docs live).
+
 #### 2c. Stack-specific rules
 
 Pick 1-3, **only when the repo actually uses them**.
@@ -178,7 +182,7 @@ Pick 1-3, **only when the repo actually uses them**.
 | Prisma | `templates/L1-context/prisma.mdc.template` (verify `lib/prisma.ts` import path) |
 | Other ORM | Author from scratch using `api-routes.mdc.template` as a structural example |
 
-For each rule: set narrow `globs:`, set `alwaysApply: true` only for `no-go-zones`. Glob-scoped rules can run up to 120 lines if you're documenting multiple coexisting patterns (e.g. legacy + new auth helpers); always-apply must stay under 80.
+For each rule: set narrow `globs:`, set `alwaysApply: true` only for `no-go-zones` and `model-routing`. Glob-scoped rules can run up to 120 lines if you're documenting multiple coexisting patterns (e.g. legacy + new auth helpers); always-apply must stay under 80.
 
 #### 2d. 1-3 task-specific skills
 
@@ -195,6 +199,8 @@ Common candidates: `add-api-route`, `add-component`, `add-page`, `add-prisma-mod
 #### 2f. `docs/agent-context/README.md`
 
 Copy `templates/L1-context/agent-context-readme.md.template`. Documents the layers in this repo and who edits what.
+
+Also copy `docs/model-routing-policy.md` from the pipeline repo into `docs/agent-context/model-routing-policy.md` (or `docs/model-routing-policy.md` if the repo has no `docs/agent-context/`).
 
 #### 2g. Design-domain skills (multi-select, optional)
 
@@ -428,7 +434,7 @@ Sort artifacts by `path` for deterministic diffs.
 
 | Layer | Artifacts to include |
 | --- | --- |
-| L1 | `.cursor/rules/no-go-zones.mdc`, each stack-specific `.cursor/rules/<name>.mdc`, each `.cursor/skills/<name>/SKILL.md`, `scripts/generate-schema-map.ts` (if Prisma), `.cursor/rules/prisma-schema-map.mdc` (if Prisma), `docs/agent-context/README.md` |
+| L1 | `.cursor/rules/no-go-zones.mdc`, `.cursor/rules/model-routing.mdc`, each stack-specific `.cursor/rules/<name>.mdc`, each `.cursor/skills/<name>/SKILL.md`, `scripts/generate-schema-map.ts` (if Prisma), `.cursor/rules/prisma-schema-map.mdc` (if Prisma), `docs/agent-context/README.md`, `docs/model-routing-policy.md` (or `docs/agent-context/model-routing-policy.md`) |
 | L2 | Every `.cursor/agents/role-*.md` file written |
 | L3 | `.github/PULL_REQUEST_TEMPLATE.md`, `.convoys/README.md`, `scripts/wt.sh`, `scripts/log-convoy-event.sh`, every `.github/workflows/<name>.yml` written (including `agent-context-drift.yml` if installed), `.github/CODEOWNERS`, `cloudbuild-ci.yaml` (cloudbuild variant only), stack-specific extras (`lib/flags/index.ts`, `tests/smoke/app.smoke.spec.ts`) |
 | L0 | Nothing — L0 is per-machine MCP install, not per-repo files (except `.code-review-graphignore` and `prefer-code-graph.mdc` if installed, which DO get tracked) |
@@ -512,9 +518,10 @@ Before handing off, confirm:
 
 ```
 templates/
-├── L1-context/                              (9 files; per-repo customization required)
+├── L1-context/                              (10 files; per-repo customization required)
 │   ├── AGENTS.md.template
 │   ├── no-go-zones.mdc
+│   ├── model-routing.mdc.template
 │   ├── api-routes.mdc.template
 │   ├── prisma.mdc.template
 │   ├── prisma-schema-map.mdc.template

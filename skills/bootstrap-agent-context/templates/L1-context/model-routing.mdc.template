@@ -1,0 +1,34 @@
+---
+description: Model tier defaults for the agent pipeline — Opus for planning only; fast models for build and audit
+alwaysApply: true
+---
+
+# Model routing (cost-aware pipeline)
+
+Cursor subagent roles in `.cursor/agents/role-*.md` declare a `model:` in frontmatter. **Invoke roles from the Agents dropdown** (or a fresh chat pinned to that role) so the configured model applies. Parent chats on Opus that spawn Task subagents may override role models — see `docs/model-routing-policy.md`.
+
+## Default session model
+
+- **Parent chat (ad hoc work):** `auto` or `composer-2.5-fast`.
+- **Escalate to Opus** (`claude-4.6-opus-high-thinking`) only for conductor, architect, or after two failed implementer attempts on the same brief.
+- **Never use Opus 4.7 / xhigh** for routine pipeline work unless leadership explicitly approves a spike.
+
+## Per-role tiers (canonical)
+
+| Tier | Roles | Model |
+| --- | --- | --- |
+| Premium | conductor, architect | `claude-4.6-opus-high-thinking` |
+| Fast | ia-architect, ux-reviewer, implementer, reviewer, design-system-auditor, a11y-auditor | `composer-2.5-fast` |
+| Auto | doc-writer | `auto` |
+
+Read `model_policy:` from the convoy frontmatter when present; it overrides these defaults for that convoy.
+
+## Context discipline (biggest cost lever)
+
+- Implementers and auditors: read **only** the brief + files in `files:` — not the whole convoy, not `prisma/schema.prisma` unless listed.
+- Audits: diff + brief only; no repo-wide grep sweeps.
+- Stop and ask before any single chat exceeds ~5M tokens; start a fresh scoped chat instead.
+
+## Metrics
+
+After each role, log `model=` and `model_tier=` via `scripts/log-convoy-event.sh` (see each role's Metrics section).

@@ -24,6 +24,9 @@ interface ConvoyRollup {
   convoy_count: number;
   events_by_role: Record<string, number>;
   events_by_repo: Record<string, number>;
+  events_by_model: Record<string, number>;
+  events_by_model_tier: Record<string, number>;
+  estimated_cost_usd_total: number | null;
   classification_distribution: Record<string, number>;
   skip_flag_frequency: Record<string, number>;
   median_duration_by_role_s: Record<string, number | null>;
@@ -114,14 +117,22 @@ function signals(rollup: ConvoyRollup, transcripts: TranscriptSummary[]): string
     out.push(`<li class="signal-warn"><strong>Hotfixes dominate classification</strong> — pipeline overhead may be too high for normal feature work. Lower the activation energy for <code>feature</code> runs.</li>`);
   }
 
-  // Signal 5: role under-use
+  // Signal 5: premium tier dominates fast (cost leak)
+  const tierCounts = rollup.events_by_model_tier || {};
+  const premiumCount = tierCounts["premium"] || 0;
+  const fastCount = tierCounts["fast"] || 0;
+  if (premiumCount > 0 && fastCount > 0 && premiumCount > fastCount) {
+    out.push(`<li class="signal-warn"><strong>Premium model tier dominates convoy events</strong> — ${premiumCount} premium vs ${fastCount} fast. Audit/implementer roles should use <code>composer-2.5-fast</code>. See <code>docs/model-routing-policy.md</code>.</li>`);
+  }
+
+  // Signal 6: role under-use
   for (const [role, count] of Object.entries(rollup.events_by_role)) {
     if (count === 0) {
       out.push(`<li class="signal-warn"><strong><code>${escapeHtml(role)}</code> never invoked</strong> — consider whether the role is needed.</li>`);
     }
   }
 
-  // Signal 6: token volume context
+  // Signal 7: token volume context
   if (totalTokens > 0) {
     out.push(`<li>Total tokens across mined chats: <strong>${fmtNumber(totalTokens)}</strong>. Watch this trend — sustained increases without convoy growth suggests rule bloat.</li>`);
   }
@@ -149,7 +160,9 @@ async function loadConvoys(): Promise<ConvoyRollup> {
     return {
       generated_at: new Date().toISOString(),
       repo_count: 0, event_count: 0, convoy_count: 0,
-      events_by_role: {}, events_by_repo: {}, classification_distribution: {},
+      events_by_role: {}, events_by_repo: {}, events_by_model: {}, events_by_model_tier: {},
+      estimated_cost_usd_total: null,
+      classification_distribution: {},
       skip_flag_frequency: {}, median_duration_by_role_s: {}, convoys: [],
     };
   }
@@ -187,6 +200,8 @@ async function main() {
     "<!--ROLES_TABLE-->": tableRows(convoys.events_by_role),
     "<!--CLASS_TABLE-->": tableRows(convoys.classification_distribution),
     "<!--SKIPS_TABLE-->": tableRows(convoys.skip_flag_frequency),
+    "<!--MODEL_TIER_TABLE-->": tableRows(convoys.events_by_model_tier || {}),
+    "<!--MODEL_TABLE-->": tableRows(convoys.events_by_model || {}, 12),
     "<!--DURATION_TABLE-->": durationRows(convoys.median_duration_by_role_s),
     "<!--TOOLS_TABLE-->": tableRows(aggregateTools(transcripts), 15),
     "<!--SIGNALS-->": signals(convoys, transcripts),

@@ -10,6 +10,7 @@ description: >-
   tokens/**, or tailwind.config.{ts,js}. Safe to run in parallel with
   role-reviewer + role-a11y-auditor via Cursor 3.2 /multitask.
 multitask: audit-fanout
+model: composer-2.5-fast
 tools: [Read, Grep, Glob, Shell]
 ---
 
@@ -68,7 +69,7 @@ Message: *"DS audit complete. Maturity: T{n}/C{n}/P{n}/G{n}/A{n}. Top leverage: 
 After publishing:
 
 ```bash
-bash scripts/log-convoy-event.sh role=role-design-system-auditor convoy=<slug> duration_s=<seconds> [multitask_group=audit-<convoy>-<pr>]
+bash scripts/log-convoy-event.sh role=role-design-system-auditor convoy=<slug> duration_s=<seconds> model=composer-2.5-fast model_tier=fast [multitask_group=audit-<convoy>-<pr>]
 ```
 
 Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed).

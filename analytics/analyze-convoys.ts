@@ -31,6 +31,10 @@ interface ConvoyEvent {
   stack_class?: string | null;
   repo: string;
   outcome?: string | null;
+  multitask_group?: string | null;
+  model?: string | null;
+  model_tier?: string | null;
+  estimated_cost_usd?: number | null;
 }
 
 interface Rollup {
@@ -40,6 +44,9 @@ interface Rollup {
   convoy_count: number;
   events_by_role: Record<string, number>;
   events_by_repo: Record<string, number>;
+  events_by_model: Record<string, number>;
+  events_by_model_tier: Record<string, number>;
+  estimated_cost_usd_total: number | null;
   classification_distribution: Record<string, number>;
   skip_flag_frequency: Record<string, number>;
   median_duration_by_role_s: Record<string, number | null>;
@@ -93,6 +100,10 @@ function median(nums: number[]): number | null {
 function rollup(events: ConvoyEvent[], repoPaths: string[]): Rollup {
   const events_by_role: Record<string, number> = {};
   const events_by_repo: Record<string, number> = {};
+  const events_by_model: Record<string, number> = {};
+  const events_by_model_tier: Record<string, number> = {};
+  let estimated_cost_usd_total = 0;
+  let has_cost = false;
   const classification_distribution: Record<string, number> = {};
   const skip_flag_frequency: Record<string, number> = {};
   const durations_by_role: Record<string, number[]> = {};
@@ -100,6 +111,16 @@ function rollup(events: ConvoyEvent[], repoPaths: string[]): Rollup {
   for (const ev of events) {
     events_by_role[ev.role] = (events_by_role[ev.role] || 0) + 1;
     events_by_repo[ev.repo] = (events_by_repo[ev.repo] || 0) + 1;
+    if (ev.model) {
+      events_by_model[ev.model] = (events_by_model[ev.model] || 0) + 1;
+    }
+    if (ev.model_tier) {
+      events_by_model_tier[ev.model_tier] = (events_by_model_tier[ev.model_tier] || 0) + 1;
+    }
+    if (typeof ev.estimated_cost_usd === "number" && ev.estimated_cost_usd >= 0) {
+      estimated_cost_usd_total += ev.estimated_cost_usd;
+      has_cost = true;
+    }
     if (ev.classification) {
       classification_distribution[ev.classification] =
         (classification_distribution[ev.classification] || 0) + 1;
@@ -151,6 +172,9 @@ function rollup(events: ConvoyEvent[], repoPaths: string[]): Rollup {
     convoy_count: convoys.length,
     events_by_role,
     events_by_repo,
+    events_by_model,
+    events_by_model_tier,
+    estimated_cost_usd_total: has_cost ? Math.round(estimated_cost_usd_total * 100) / 100 : null,
     classification_distribution,
     skip_flag_frequency,
     median_duration_by_role_s,

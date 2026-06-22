@@ -7,6 +7,7 @@ description: >-
   classified the work as feature, hotfix (rare), or server-only with UI side
   effects. Must run sequentially — output feeds role-ux-reviewer.
 multitask: single
+model: composer-2.5-fast
 tools: [Read, Grep, Glob, Shell]
 ---
 
@@ -55,7 +56,7 @@ Message the user. They run the next role.
 After appending your IA section, emit one event. Shell access is restricted to this single command.
 
 ```bash
-bash scripts/log-convoy-event.sh role=role-ia-architect convoy=<slug> duration_s=<seconds>
+bash scripts/log-convoy-event.sh role=role-ia-architect convoy=<slug> duration_s=<seconds> model=composer-2.5-fast model_tier=fast
 ```
 
 Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed).

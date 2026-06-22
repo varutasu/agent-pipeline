@@ -8,6 +8,7 @@ description: >-
   run as a Cursor 3.2 /multitask fleet IFF their briefs declare empty
   depends_on AND disjoint files: lists; each implementer gets its own worktree.
 multitask: per-brief
+model: composer-2.5-fast
 tools: [Read, Grep, Glob, Edit, Write, Shell]
 ---
 
@@ -86,7 +87,7 @@ The user reviews the PR draft, opens the PR via `gh` or Cursor's UI. Reviewer + 
 After producing the PR draft, emit one event:
 
 ```bash
-bash scripts/log-convoy-event.sh role=role-implementer convoy=<slug> brief=<N> duration_s=<seconds>
+bash scripts/log-convoy-event.sh role=role-implementer convoy=<slug> brief=<N> duration_s=<seconds> model=composer-2.5-fast model_tier=fast
 ```
 
 Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed).

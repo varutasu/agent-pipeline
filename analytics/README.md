@@ -30,7 +30,9 @@ Each L2 role appends one line to `<repo>/.convoys/.metrics.jsonl` when invoked. 
   "skip_flags": ["smoke", "visual"],
   "duration_s": 142,
   "stack_class": "nextjs-prisma",   // set by conductor only
-  "repo": "zest"                    // git repo name; resolved from `git rev-parse --show-toplevel`
+  "repo": "zest",                    // git repo name; resolved from `git rev-parse --show-toplevel`
+  "model": "composer-2.5-fast",
+  "model_tier": "fast"
 }
 ```
 
@@ -96,6 +98,7 @@ The dashboard surfaces these heuristics:
 | **Role X skip rate >70%** | The role isn't useful or is misclassified | Review whether the role is needed; or fix the Conductor's classification heuristics |
 | **Role X duration trending up** | The role is bloating | Tighten the role spec; trim verbose sections |
 | **Total tokens per convoy trending up** | Curated layer drifted | Re-validate against `validation-protocol.md`; check rule sizes |
+| **Premium `model_tier` on fast-tier roles** | Opus used for audits/implementers | Invoke roles from Agents UI; follow `model-routing.mdc` |
 | **MCP calls = 0 across all transcripts** | MCP layer not pulling weight | Disable the MCP nudge rule; reclaim the always-apply budget |
 | **Tool call mix dominated by Grep** | Curated rules don't cover the work patterns | Add a glob-scoped rule for the relevant area |
 | **Convoy classification skewed to `hotfix`** | Pipeline overhead too high for normal work | Investigate friction; lower the activation energy for `feature` runs |

@@ -4,6 +4,36 @@ All notable changes to `agent-pipeline` are documented here. This file follows [
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-06-22
+
+Cost-aware model routing + richer convoy metrics. Addresses deferred orchestration-spec item "per-role model tier configs" with practical defaults validated against Trimble usage data (Opus-heavy spend, 10M+ token mega-sessions).
+
+### Added
+
+- **`templates/L1-context/model-routing.mdc.template`** — always-on rule (~45 lines): default session model, per-role tiers, context discipline, metrics nudge.
+- **`docs/model-routing-policy.md`** — team-facing policy: tier table, convoy `model_policy:` block, multitask cost notes, Cursor enforcement limits, metrics contract.
+- **Convoy metrics schema** — optional `model`, `model_tier`, `estimated_cost_usd` on `analytics/schemas/convoy-event.json`.
+- **Dashboard** — model tier + model ID tables; premium-tier dominance warning in self-optimization signals.
+
+### Changed
+
+- **All 9 L2 role templates** — `model:` frontmatter (`claude-4.6-opus-high-thinking` for conductor/architect; `composer-2.5-fast` for build/audit/planning-support; `auto` for doc-writer). Metrics examples include `model=` and `model_tier=`.
+- **`role-conductor.md`** — writes `model_policy:` in convoy frontmatter; new `## Model routing` section.
+- **`role-architect.md`** — brief frontmatter gains `recommended_model` + `model_tier`.
+- **`log-convoy-event.sh`** — accepts `model`, `model_tier`, `estimated_cost_usd`.
+- **`analyze-convoys.ts`** — rolls up `events_by_model`, `events_by_model_tier`, `estimated_cost_usd_total`.
+- **`multitask-playbook.md`** — Pattern A: audit fan-out saves wall-clock **and** token cost when roles use fast models.
+- **`docs/role-reference.md`** — new Model column on the 9-roles table.
+- **`bootstrap-agent-context/SKILL.md`** — Step 2b-ii installs `model-routing.mdc`; manifest tracks it; copies `model-routing-policy.md`.
+- **`tests/smoke.sh`** — asserts `model:` on every L2 role; validates model fields in log-convoy-event output.
+
+### Notes
+
+- Model routing is **recommend + default**, not hard enforcement — parent agents can still override subagent models (known Cursor limitation). Invoke roles from the Agents UI for best results.
+- Downstream forks (e.g. `tux_fs-agent-pipeline`) should absorb this release and bump consumer manifests via `sync-agent-context`.
+
+## [0.5.1] — 2026-06-11
+
 ### Added — `templates/L3-pipeline/_common/`
 
 - **`convoy-metrics-gate.yml.template`** (NEW). PR gate workflow that fails `convoy:`-prefixed PRs which do NOT add a row to `.convoys/.metrics.jsonl`. Pairs with the existing `log-convoy-event.sh`. Bypass via `skip-metrics` label. Source: this pattern was installed directly on `tcg-vault` in June after a retro finding (Jun 5-11 window: 8 convoy PRs shipped without telemetry rows despite the L2 role files telling them to call the shim). The gate caught 0 violations after install — by the time it was live, role compliance had already snapped back. Lifting the workflow into the pipeline installer makes it available to future consumers and downstream forks (including [`tux_fs-agent-pipeline`](https://github.com/rstillwell-trimb/tux_fs-agent-pipeline) which independently shipped this in `v0.1.7-trimble`).

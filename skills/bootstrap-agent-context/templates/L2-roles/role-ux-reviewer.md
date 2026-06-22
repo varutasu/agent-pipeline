@@ -10,6 +10,7 @@ description: >-
   Use after IA Architect on any feature with UI changes. Sequential —
   refines the IA section, feeds role-architect.
 multitask: single
+model: composer-2.5-fast
 tools: [Read, Grep, Glob, Shell]
 ---
 
@@ -69,7 +70,7 @@ Mode 2: message: *"UX critique complete. Score X/50. N sev-≥-3 findings. Top 3
 After completing:
 
 ```bash
-bash scripts/log-convoy-event.sh role=role-ux-reviewer convoy=<slug> duration_s=<seconds>
+bash scripts/log-convoy-event.sh role=role-ux-reviewer convoy=<slug> duration_s=<seconds> model=composer-2.5-fast model_tier=fast
 ```
 
 Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed).

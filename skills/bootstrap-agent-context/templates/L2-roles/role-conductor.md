@@ -7,6 +7,7 @@ description: >-
   for downstream roles, and hands off to the next role. Use when a new feature,
   bug fix, or epic is being kicked off and the work has not yet been scoped.
 multitask: single
+model: claude-4.6-opus-high-thinking
 tools: [Read, Grep, Glob, Write, Shell]
 ---
 
@@ -40,9 +41,26 @@ classification: feature | hotfix | docs-only | infra-only | server-only | config
 success_metric: <one sentence>
 skip:
   - <flag1>
-  - <flag2>
 status: open
 created: <YYYY-MM-DD>
+model_policy:
+  default_session: auto
+  roles:
+    role-conductor: claude-4.6-opus-high-thinking
+    role-architect: claude-4.6-opus-high-thinking
+    role-ia-architect: composer-2.5-fast
+    role-ux-reviewer: composer-2.5-fast
+    role-implementer: composer-2.5-fast
+    role-reviewer: composer-2.5-fast
+    role-design-system-auditor: composer-2.5-fast
+    role-a11y-auditor: composer-2.5-fast
+    role-doc-writer: auto
+  escalate_to: claude-4.6-opus-high-thinking
+  never_premium:
+    - role-reviewer
+    - role-design-system-auditor
+    - role-a11y-auditor
+    - role-doc-writer
 ---
 ```
 
@@ -95,6 +113,16 @@ When implementer fan-out is on the table, **only flag briefs the architect has e
 
 See [`docs/multitask-playbook.md`](../../../../docs/multitask-playbook.md) for the full guardrail set.
 
+## Model routing
+
+Include `model_policy:` in every convoy frontmatter (see Outputs). Tell the user:
+
+1. **Parent session:** `auto` or `composer-2.5-fast` unless they are running conductor/architect in this chat.
+2. **Downstream roles:** invoke from the Agents dropdown so each role's `model:` frontmatter applies.
+3. **Audit fan-out:** fast models only — never Opus for reviewer / auditors.
+
+Full policy: [`docs/model-routing-policy.md`](../../../../docs/model-routing-policy.md).
+
 ## Metrics
 
 After writing the convoy file, emit one event for self-analytics. Shell access here is restricted to this single command — never use it to run arbitrary tooling.
@@ -105,7 +133,9 @@ bash scripts/log-convoy-event.sh \
   convoy=<slug> \
   classification=<feature|hotfix|docs-only|infra-only|server-only|config-only> \
   skip_flags=<comma,separated> \
-  duration_s=<seconds-since-trigger>
+  duration_s=<seconds-since-trigger> \
+  model=claude-4.6-opus-high-thinking \
+  model_tier=premium
 ```
 
 If `scripts/log-convoy-event.sh` does not exist (L3 not installed), skip silently — analytics is opt-in.
