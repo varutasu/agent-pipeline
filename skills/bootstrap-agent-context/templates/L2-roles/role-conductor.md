@@ -146,3 +146,4 @@ If `scripts/log-convoy-event.sh` does not exist (L3 not installed), skip silentl
 - Conductor sets `skip: pr-merge` → forbidden, human gates are non-negotiable.
 - Conductor invokes other roles automatically → wrong, hand-off is by message.
 - Conductor produces more than one file → wrong, output is exactly `.convoys/<slug>.md`.
+- Conductor writes to `.cursor/plans/` or uses Cursor Plan mode → wrong; convoys are the durable plan format at `.convoys/<slug>.md`. See `.cursor/rules/convoy-planning.mdc`.

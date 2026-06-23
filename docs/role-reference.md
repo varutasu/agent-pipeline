@@ -2,6 +2,8 @@
 
 One-page summary of the 9 L2 subagent roles and the pipeline that connects them. Full role specs live in `skills/bootstrap-agent-context/templates/L2-roles/role-*.md` (and after install, in your repo at `.cursor/agents/role-*.md`).
 
+**Planning format:** pipeline convoys are Markdown files at `.convoys/<slug>.md` — not Cursor Plan files at `.cursor/plans/`. Start work with `role-conductor`. See `.convoys/README.md` and `.cursor/rules/convoy-planning.mdc` in bootstrapped repos.
+
 ## Pipeline at a glance
 
 ```

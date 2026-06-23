@@ -4,6 +4,17 @@ All notable changes to `agent-pipeline` are documented here. This file follows [
 
 ## [Unreleased]
 
+### Added
+
+- **`templates/L1-context/convoy-planning.mdc.template`** — always-on rule (when L2/L3 installed) that directs pipeline planning to `.convoys/<slug>.md` instead of Cursor's native `.cursor/plans/*.plan.md`. Addresses repeated confusion where agents use Plan mode for convoy work.
+- **`AGENTS.md.template` section 10 (Convoys)** — short pointer to convoy files, role-conductor, and the new rule. Bootstrap deletes this section for L1-only installs.
+
+### Changed
+
+- **`role-conductor.md`** — new anti-pattern: do not write to `.cursor/plans/` or use Cursor Plan mode for convoys.
+- **`convoys-readme.md.template`** — callout block distinguishing convoys from Cursor Plan mode.
+- **`bootstrap-agent-context/SKILL.md`** — Step 2b-iii installs `convoy-planning.mdc` when L2 or L3 is in scope; manifest + review checklist updated.
+
 ## [0.6.0] — 2026-06-22
 
 Cost-aware model routing + richer convoy metrics. Addresses deferred orchestration-spec item "per-role model tier configs" with practical defaults validated against Trimble usage data (Opus-heavy spend, 10M+ token mega-sessions).

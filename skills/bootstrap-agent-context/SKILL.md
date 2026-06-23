@@ -172,6 +172,12 @@ Copy `templates/L1-context/no-go-zones.mdc`. Edit for this repo:
 
 Copy `templates/L1-context/model-routing.mdc.template` → `.cursor/rules/model-routing.mdc`. Sets cost-aware default model tiers per pipeline role. Point to `docs/model-routing-policy.md` in the repo (copy from pipeline `docs/model-routing-policy.md` into `docs/agent-context/` or repo `docs/` — match where other pipeline docs live).
 
+#### 2b-iii. `.cursor/rules/convoy-planning.mdc` (always-apply, **only if L2 or L3 is in scope**)
+
+Copy `templates/L1-context/convoy-planning.mdc.template` → `.cursor/rules/convoy-planning.mdc`. Prevents agents from writing pipeline plans to `.cursor/plans/` (Cursor's native Plan mode) instead of `.convoys/<slug>.md`. Skip this rule if the user installed L1 only.
+
+When filling `AGENTS.md` from the template, **keep section 10 (Convoys)** if L2 or L3 was installed; delete it if L1 only.
+
 #### 2c. Stack-specific rules
 
 Pick 1-3, **only when the repo actually uses them**.
@@ -182,7 +188,7 @@ Pick 1-3, **only when the repo actually uses them**.
 | Prisma | `templates/L1-context/prisma.mdc.template` (verify `lib/prisma.ts` import path) |
 | Other ORM | Author from scratch using `api-routes.mdc.template` as a structural example |
 
-For each rule: set narrow `globs:`, set `alwaysApply: true` only for `no-go-zones` and `model-routing`. Glob-scoped rules can run up to 120 lines if you're documenting multiple coexisting patterns (e.g. legacy + new auth helpers); always-apply must stay under 80.
+For each rule: set narrow `globs:`, set `alwaysApply: true` only for `no-go-zones`, `model-routing`, and `convoy-planning` (when L2/L3 installed). Glob-scoped rules can run up to 120 lines if you're documenting multiple coexisting patterns (e.g. legacy + new auth helpers); always-apply must stay under 80.
 
 #### 2d. 1-3 task-specific skills
 
@@ -434,7 +440,7 @@ Sort artifacts by `path` for deterministic diffs.
 
 | Layer | Artifacts to include |
 | --- | --- |
-| L1 | `.cursor/rules/no-go-zones.mdc`, `.cursor/rules/model-routing.mdc`, each stack-specific `.cursor/rules/<name>.mdc`, each `.cursor/skills/<name>/SKILL.md`, `scripts/generate-schema-map.ts` (if Prisma), `.cursor/rules/prisma-schema-map.mdc` (if Prisma), `docs/agent-context/README.md`, `docs/model-routing-policy.md` (or `docs/agent-context/model-routing-policy.md`) |
+| L1 | `.cursor/rules/no-go-zones.mdc`, `.cursor/rules/model-routing.mdc`, `.cursor/rules/convoy-planning.mdc` (if L2/L3), each stack-specific `.cursor/rules/<name>.mdc`, each `.cursor/skills/<name>/SKILL.md`, `scripts/generate-schema-map.ts` (if Prisma), `.cursor/rules/prisma-schema-map.mdc` (if Prisma), `docs/agent-context/README.md`, `docs/model-routing-policy.md` (or `docs/agent-context/model-routing-policy.md`) |
 | L2 | Every `.cursor/agents/role-*.md` file written |
 | L3 | `.github/PULL_REQUEST_TEMPLATE.md`, `.convoys/README.md`, `scripts/wt.sh`, `scripts/log-convoy-event.sh`, every `.github/workflows/<name>.yml` written (including `agent-context-drift.yml` if installed), `.github/CODEOWNERS`, `cloudbuild-ci.yaml` (cloudbuild variant only), stack-specific extras (`lib/flags/index.ts`, `tests/smoke/app.smoke.spec.ts`) |
 | L0 | Nothing — L0 is per-machine MCP install, not per-repo files (except `.code-review-graphignore` and `prefer-code-graph.mdc` if installed, which DO get tracked) |
@@ -456,7 +462,8 @@ End your reply with:
 ## Review checklist
 
 ### L1 (if installed)
-- [ ] Read `AGENTS.md` for accuracy. Look for `<!-- TODO -->` markers.
+- [ ] Read `AGENTS.md` for accuracy. Look for `<!-- TODO -->` markers. Section 10 (Convoys) present only if L2/L3 installed.
+- [ ] `.cursor/rules/convoy-planning.mdc` present if L2/L3 installed; absent if L1-only.
 - [ ] Read each `.cursor/rules/*.mdc` and confirm `globs:` match real paths.
 - [ ] Read each `.cursor/skills/*/SKILL.md` and confirm the recipe matches reality.
 - [ ] (Prisma) Skim `docs/SCHEMA_MAP.md` and confirm `MODEL_GROUPS` looks right.
@@ -518,10 +525,11 @@ Before handing off, confirm:
 
 ```
 templates/
-├── L1-context/                              (10 files; per-repo customization required)
+├── L1-context/                              (11 files; per-repo customization required)
 │   ├── AGENTS.md.template
 │   ├── no-go-zones.mdc
 │   ├── model-routing.mdc.template
+│   ├── convoy-planning.mdc.template         (always-on when L2/L3 installed; blocks .cursor/plans/ for pipeline work)
 │   ├── api-routes.mdc.template
 │   ├── prisma.mdc.template
 │   ├── prisma-schema-map.mdc.template

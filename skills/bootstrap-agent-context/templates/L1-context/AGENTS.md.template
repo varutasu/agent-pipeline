@@ -74,3 +74,16 @@ If applicable, add lines like:
 <!-- Keep only if `code-review-graph` or another MCP code-graph server is in use. Otherwise delete this section. -->
 
 A local code-knowledge-graph MCP server (e.g. `code-review-graph`) can be installed per-developer to answer navigation questions ("what calls X?", "where is Y defined?"). It is **not** required and nothing in this repo depends on it. See `docs/agent-context/README.md` for setup notes.
+
+## 10. Convoys (pipeline planning)
+
+<!-- Delete this entire section if only L1 was installed (no L2 roles, no .convoys/). -->
+
+Pipeline planning uses **convoy files** at `.convoys/<slug>.md` — not Cursor's native Plan files at `.cursor/plans/`.
+
+- **Start new work:** invoke `role-conductor` — *"Start a new convoy: [idea]. Success = [metric]."*
+- **Format spec:** [`.convoys/README.md`](.convoys/README.md)
+- **Role pipeline:** [`docs/role-reference.md`](docs/role-reference.md) (or `docs/agent-context/role-reference.md` if that's where pipeline docs live)
+- **Rule:** [`.cursor/rules/convoy-planning.mdc`](.cursor/rules/convoy-planning.mdc)
+
+Do not create `.cursor/plans/` files for convoy or L2-role work. If Plan mode produced one by mistake, migrate the content into `.convoys/<slug>.md` or discard it.

@@ -2,6 +2,8 @@
 
 A **convoy** is a multi-PR work-stream coordinated by an agent pipeline. One convoy = one feature, bug fix, or epic. Each convoy is a Markdown file in this directory plus an optional sub-directory of implementer briefs.
 
+> **Not Cursor Plan mode.** Pipeline convoys live here (`.convoys/*.md`). Cursor's native Plan feature writes to `.cursor/plans/*.plan.md` — a different artifact. For pipeline work, invoke `role-conductor` and write `.convoys/<slug>.md`; do not create `.cursor/plans/` files. See `.cursor/rules/convoy-planning.mdc`.
+
 ## File layout
 
 ```

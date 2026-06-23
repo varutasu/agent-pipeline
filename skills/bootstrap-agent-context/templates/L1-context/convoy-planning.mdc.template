@@ -1,0 +1,32 @@
+---
+description: Pipeline planning uses .convoys/*.md — not Cursor Plan files in .cursor/plans/
+alwaysApply: true
+---
+
+# Convoy planning (pipeline work)
+
+When scoping, planning, or kicking off **pipeline work** (features, hotfixes, epics tracked by L2 roles), use **convoy files** — not Cursor's native Plan mode.
+
+## Where plans live
+
+| Use case | Location | Who writes it |
+| --- | --- | --- |
+| **Pipeline convoy** (idea → briefs → PR) | `.convoys/<slug>.md` | `role-conductor`, then other L2 roles append sections |
+| **Implementer briefs** | `.convoys/<slug>/brief-<N>-<title>.md` | `role-architect` |
+| **Cursor Plan mode** (ad-hoc, non-pipeline) | `.cursor/plans/*.plan.md` | Cursor UI — **not** the agent-pipeline |
+
+## Do
+
+- Start pipeline work: *"Run role-conductor: start a new convoy for [idea]. Success = [metric]."*
+- Read [`.convoys/README.md`](.convoys/README.md) for frontmatter, skip flags, and lifecycle.
+- Read [`.cursor/agents/role-conductor.md`](.cursor/agents/role-conductor.md) before writing a convoy file.
+
+## Do not
+
+- Create `.cursor/plans/` files for convoy or L2-role work.
+- Use vague prompts like *"make a plan"* or *"plan this feature"* when the user meant a convoy — ask once, then invoke the Conductor.
+- Put architecture or brief content only in chat when a convoy file should exist.
+
+## If a `.cursor/plans/` file already exists
+
+That is Cursor's native Plan artifact, not a pipeline convoy. Either delete it, or copy the useful content into `.convoys/<slug>.md` and continue from the convoy file.
