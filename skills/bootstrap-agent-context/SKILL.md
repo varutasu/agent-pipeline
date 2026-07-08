@@ -55,7 +55,7 @@ Bootstrap progress:
 - [ ] Step 0: Detect stack, multi-root workspace, and existing state
 - [ ] Step 1: Confirm which layers to install (L1 / L2 / L3)
 - [ ] Step 2: L1 — AGENTS.md, no-go-zones, stack rules, skills, (Prisma) schema map, agent-context README
-- [ ] Step 3: L2 — 9 role files in .cursor/agents/
+- [ ] Step 3: L2 — 10 role files in .cursor/agents/
 - [ ] Step 3.5: Print multitask cheat sheet (Cursor 3.2+ /multitask dispatch points)
 - [ ] Step 4: L3 — pick stack variant; copy CI + PR template + CODEOWNERS + convoys + optional extras
 - [ ] Step 4.7: Write `.agent-context-manifest.yml` listing every artifact installed (used by `sync-agent-context` for drift detection)
@@ -124,7 +124,7 @@ Use `AskQuestion` with these questions, allow_multiple where indicated:
 
 1. **Which layers to install?** (allow_multiple = true)
    - L1 — Context (AGENTS.md, rules, skills, schema map)
-   - L2 — Subagent roles (9 role-*.md files)
+   - L2 — Subagent roles (10 role-*.md files)
    - L3 — Pipeline scaffolding (CI, PR template, CODEOWNERS, convoys)
 
 2. **For existing files, prefer:** (single-select; only ask if any layer collides with existing files)
@@ -178,6 +178,10 @@ Copy `templates/L1-context/convoy-planning.mdc.template` → `.cursor/rules/conv
 
 When filling `AGENTS.md` from the template, **keep section 10 (Convoys)** if L2 or L3 was installed; delete it if L1 only.
 
+#### 2b-iv. `.cursor/rules/security-baseline.mdc` (always-apply, **only if L2 or L3 is in scope**)
+
+Copy `templates/L1-context/security-baseline.mdc.template` → `.cursor/rules/security-baseline.mdc`. Secure-coding defaults for implementers and auditors (secrets, authz, input validation). Skip if L1 only.
+
 #### 2c. Stack-specific rules
 
 Pick 1-3, **only when the repo actually uses them**.
@@ -185,10 +189,11 @@ Pick 1-3, **only when the repo actually uses them**.
 | Detected | Draft from |
 | --- | --- |
 | Next.js App Router with `app/api/**/route.ts` | `templates/L1-context/api-routes.mdc.template` (verify auth/error helper imports first) |
+| Auth helpers / session middleware in use | `templates/L1-context/auth-patterns.mdc.template` (verify import paths; narrow `globs:` to real auth files) |
 | Prisma | `templates/L1-context/prisma.mdc.template` (verify `lib/prisma.ts` import path) |
 | Other ORM | Author from scratch using `api-routes.mdc.template` as a structural example |
 
-For each rule: set narrow `globs:`, set `alwaysApply: true` only for `no-go-zones`, `model-routing`, and `convoy-planning` (when L2/L3 installed). Glob-scoped rules can run up to 120 lines if you're documenting multiple coexisting patterns (e.g. legacy + new auth helpers); always-apply must stay under 80.
+For each rule: set narrow `globs:`, set `alwaysApply: true` only for `no-go-zones`, `model-routing`, `convoy-planning`, and `security-baseline` (when L2/L3 installed). Glob-scoped rules can run up to 120 lines if you're documenting multiple coexisting patterns (e.g. legacy + new auth helpers); always-apply must stay under 80.
 
 #### 2d. 1-3 task-specific skills
 
@@ -221,6 +226,7 @@ Wave 1a — audit-aligned (recommended for any UI-shipping repo):
   [x] accessibility-audit       (WCAG 2.2, severity 0-4, paired with role-a11y-auditor)
   [x] design-critique           (Nielsen 10 + UX laws, paired with role-ux-reviewer)
   [x] design-systems            (token + component + governance maturity, paired with role-design-system-auditor)
+  [x] security-audit            (OWASP-style 6-layer audit, paired with role-security-auditor)
 
 Wave 1b — upstream / research (parallel-safe; ships v0.4.0):
   [ ] ux-research               (generative + evaluative + continuous discovery)
@@ -240,9 +246,9 @@ Per skill chosen:
 
 1. Copy `agent-pipeline/skills/<name>/` → consumer `.cursor/skills/<name>/` verbatim. **Don't customize the SKILL.md** — these are versioned + tracked in the manifest.
 2. Record in `.agent-context-manifest.yml` under `artifacts:` with `customized: false`.
-3. Verify the corresponding L2 role file references the skill (audit-aligned skills are referenced by `role-a11y-auditor`, `role-ux-reviewer`, `role-design-system-auditor` respectively).
+3. Verify the corresponding L2 role file references the skill (audit-aligned skills are referenced by `role-a11y-auditor`, `role-ux-reviewer`, `role-design-system-auditor`, `role-security-auditor` respectively).
 
-**Phase 1a status (v0.4.0-beta.1):** `accessibility-audit`, `design-critique`, `design-systems` exist + are installable. The other 7 are placeholders for Phase 1b/1c; checking them surfaces a "(not yet implemented — coming in v0.4.0)" notice and skips that line. Stub the entries so the user's selection is preserved when 1b/1c land via `sync-agent-context`.
+**Phase 1a status (v0.4.0-beta.1):** `accessibility-audit`, `design-critique`, `design-systems`, `security-audit` exist + are installable. The other 7 are placeholders for Phase 1b/1c; checking them surfaces a "(not yet implemented — coming in v0.4.0)" notice and skips that line. Stub the entries so the user's selection is preserved when 1b/1c land via `sync-agent-context`.
 
 Attribution: every installed `SKILL.md` already carries the cuellarfr/design-skills MIT header. Don't strip it.
 
@@ -260,11 +266,12 @@ Skip this step if the user opted out of L2.
 | `templates/L2-roles/role-architect.md` | `.cursor/agents/role-architect.md` |
 | `templates/L2-roles/role-implementer.md` | `.cursor/agents/role-implementer.md` |
 | `templates/L2-roles/role-reviewer.md` | `.cursor/agents/role-reviewer.md` |
+| `templates/L2-roles/role-security-auditor.md` | `.cursor/agents/role-security-auditor.md` |
 | `templates/L2-roles/role-design-system-auditor.md` | `.cursor/agents/role-design-system-auditor.md` |
 | `templates/L2-roles/role-a11y-auditor.md` | `.cursor/agents/role-a11y-auditor.md` |
 | `templates/L2-roles/role-doc-writer.md` | `.cursor/agents/role-doc-writer.md` |
 
-For server-only or CLI repos with no UI, omit `role-ux-reviewer`, `role-design-system-auditor`, `role-a11y-auditor`. The Conductor will set `skip: ux, design, a11y` on convoys for those repos either way; omitting the role files just keeps the dropdown clean.
+For server-only or CLI repos with no UI, omit `role-ux-reviewer`, `role-design-system-auditor`, `role-a11y-auditor`. Keep `role-security-auditor` — security applies to API and server code. The Conductor will set `skip: ux, design, a11y` on convoys for those repos either way; omitting the UI role files just keeps the dropdown clean.
 
 If any role file already exists at the destination, propose a diff or write a `.proposed` sibling — do not overwrite.
 
@@ -279,8 +286,8 @@ Multitask cheat sheet (Cursor 3.2+):
 
   Audit fan-out (recommended default)
     After the implementer ships a PR draft, run:
-      /multitask role-reviewer + role-design-system-auditor + role-a11y-auditor
-    on the same diff. All three are read-only and emit independent comments.
+      /multitask role-reviewer + role-security-auditor + role-design-system-auditor + role-a11y-auditor
+    on the same diff. All four are read-only and emit independent comments.
     Use group id: audit-<convoy>-<pr>
 
   Implementer fleet (advanced — guardrails apply)
@@ -316,6 +323,15 @@ Skip this step if the user opted out of L3 OR if stack class is `non-node`.
 | `templates/L3-pipeline/_common/agent-context-drift.yml.template` | `.github/workflows/agent-context-drift.yml` (weekly cron + manual trigger; opens an issue when this repo falls behind the pipeline. Tell the user: skip this file if you don't want passive drift monitoring) |
 | `templates/L3-pipeline/_common/convoy-metrics-gate.yml.template` | `.github/workflows/convoy-metrics-gate.yml` (PR gate; fails `convoy:`-prefixed PRs that don't add a row to `.convoys/.metrics.jsonl`. Pairs with `log-convoy-event.sh` above. Tell the user: install this only if you also un-gitignore `.convoys/.metrics.jsonl` — the gate is useless if the file isn't committed. Bypass label: `skip-metrics`) |
 | `templates/L3-pipeline/_common/pre-push-gh-account.sh.template` | `.git/hooks/pre-push` (not version-controlled — copy locally and `chmod +x`; substitute `__GH_ACCOUNT__` with the gh username that owns this repo's remote. Use this only if you switch between multiple gh identities — otherwise it's a no-op. Affects `gh` CLI commands, not the git push itself) |
+
+**Optional security CI gates** (ask the user; default **off** unless they ship auth/API code):
+
+| Source | Destination |
+| --- | --- |
+| `templates/L3-pipeline/_common/forbidden-patterns.yml.template` | `.github/workflows/forbidden-patterns.yml` (grep gate for hardcoded secrets, `eval`, etc.) |
+| `templates/L3-pipeline/_common/npm-audit-gate.yml.template` | `.github/workflows/npm-audit-gate.yml` (`npm audit --audit-level=high` or pnpm equivalent) |
+
+If installed, add both to the manifest `artifacts` list and mention them in the PR template gates checklist (already templated).
 
 #### 4b. Stack-variant files
 
@@ -440,7 +456,7 @@ Sort artifacts by `path` for deterministic diffs.
 
 | Layer | Artifacts to include |
 | --- | --- |
-| L1 | `.cursor/rules/no-go-zones.mdc`, `.cursor/rules/model-routing.mdc`, `.cursor/rules/convoy-planning.mdc` (if L2/L3), each stack-specific `.cursor/rules/<name>.mdc`, each `.cursor/skills/<name>/SKILL.md`, `scripts/generate-schema-map.ts` (if Prisma), `.cursor/rules/prisma-schema-map.mdc` (if Prisma), `docs/agent-context/README.md`, `docs/model-routing-policy.md` (or `docs/agent-context/model-routing-policy.md`) |
+| L1 | `.cursor/rules/no-go-zones.mdc`, `.cursor/rules/model-routing.mdc`, `.cursor/rules/convoy-planning.mdc` (if L2/L3), `.cursor/rules/security-baseline.mdc` (if L2/L3), each stack-specific `.cursor/rules/<name>.mdc`, each `.cursor/skills/<name>/SKILL.md`, `scripts/generate-schema-map.ts` (if Prisma), `.cursor/rules/prisma-schema-map.mdc` (if Prisma), `docs/agent-context/README.md`, `docs/model-routing-policy.md` (or `docs/agent-context/model-routing-policy.md`) |
 | L2 | Every `.cursor/agents/role-*.md` file written |
 | L3 | `.github/PULL_REQUEST_TEMPLATE.md`, `.convoys/README.md`, `scripts/wt.sh`, `scripts/log-convoy-event.sh`, every `.github/workflows/<name>.yml` written (including `agent-context-drift.yml` if installed), `.github/CODEOWNERS`, `cloudbuild-ci.yaml` (cloudbuild variant only), stack-specific extras (`lib/flags/index.ts`, `tests/smoke/app.smoke.spec.ts`) |
 | L0 | Nothing — L0 is per-machine MCP install, not per-repo files (except `.code-review-graphignore` and `prefer-code-graph.mdc` if installed, which DO get tracked) |
@@ -464,15 +480,16 @@ End your reply with:
 ### L1 (if installed)
 - [ ] Read `AGENTS.md` for accuracy. Look for `<!-- TODO -->` markers. Section 10 (Convoys) present only if L2/L3 installed.
 - [ ] `.cursor/rules/convoy-planning.mdc` present if L2/L3 installed; absent if L1-only.
+- [ ] `.cursor/rules/security-baseline.mdc` present if L2/L3 installed; absent if L1-only.
 - [ ] Read each `.cursor/rules/*.mdc` and confirm `globs:` match real paths.
 - [ ] Read each `.cursor/skills/*/SKILL.md` and confirm the recipe matches reality.
 - [ ] (Prisma) Skim `docs/SCHEMA_MAP.md` and confirm `MODEL_GROUPS` looks right.
 
 ### L2 (if installed)
-- [ ] Open Cursor → Agents dropdown; verify the 9 roles appear.
+- [ ] Open Cursor → Agents dropdown; verify the 10 roles appear.
 - [ ] Read `role-conductor.md` end-to-end; the rest follow the same shape.
 - [ ] Try a dry-run: ask "Run role-conductor on idea: <X>" in a new chat.
-- [ ] On Cursor 3.2+: try the audit fan-out on a real PR — `/multitask role-reviewer + role-design-system-auditor + role-a11y-auditor` and confirm three independent comments arrive.
+- [ ] On Cursor 3.2+: try the audit fan-out on a real PR — `/multitask role-reviewer + role-security-auditor + role-design-system-auditor + role-a11y-auditor` and confirm four independent comments arrive.
 
 ### L3 (if installed)
 - [ ] Replace `@YOUR-GITHUB-HANDLE` in `.github/CODEOWNERS`.
@@ -525,11 +542,13 @@ Before handing off, confirm:
 
 ```
 templates/
-├── L1-context/                              (11 files; per-repo customization required)
+├── L1-context/                              (13 files; per-repo customization required)
 │   ├── AGENTS.md.template
 │   ├── no-go-zones.mdc
 │   ├── model-routing.mdc.template
 │   ├── convoy-planning.mdc.template         (always-on when L2/L3 installed; blocks .cursor/plans/ for pipeline work)
+│   ├── security-baseline.mdc.template       (always-on when L2/L3 installed; secure-coding defaults)
+│   ├── auth-patterns.mdc.template           (glob-scoped; placeholder like api-routes)
 │   ├── api-routes.mdc.template
 │   ├── prisma.mdc.template
 │   ├── prisma-schema-map.mdc.template
@@ -537,24 +556,27 @@ templates/
 │   ├── agent-context-readme.md.template
 │   ├── agent-context-manifest.yml.template  (Step 4.7 writes this; tracked by sync-agent-context)
 │   └── validation.md.template
-├── L2-roles/                                (9 files; copy verbatim)
+├── L2-roles/                                (10 files; copy verbatim)
 │   ├── role-conductor.md
 │   ├── role-ia-architect.md
 │   ├── role-ux-reviewer.md
 │   ├── role-architect.md
 │   ├── role-implementer.md
 │   ├── role-reviewer.md
+│   ├── role-security-auditor.md
 │   ├── role-design-system-auditor.md
 │   ├── role-a11y-auditor.md
 │   └── role-doc-writer.md
 └── L3-pipeline/                             (per-stack)
-    ├── _common/                             (7 files; all stacks)
+    ├── _common/                             (9 files; all stacks)
     │   ├── PULL_REQUEST_TEMPLATE.md.template
     │   ├── convoys-readme.md.template       (mentions Cursor 3.2 worktrees + multitask)
     │   ├── wt.sh                            (Cursor 3.2 deprecation stub; prints pointer to Agents Window worktrees)
     │   ├── log-convoy-event.sh              (powers self-analytics — L2 roles call this; supports multitask_group cohort field)
     │   ├── agent-context-drift.yml.template (weekly cron; opens issue when manifest is behind upstream pipeline)
     │   ├── convoy-metrics-gate.yml.template (PR gate; fails convoy: PRs that skip telemetry logging)
+    │   ├── forbidden-patterns.yml.template  (optional; grep gate for secrets / dangerous APIs)
+    │   ├── npm-audit-gate.yml.template    (optional; high-severity dependency audit)
     │   └── pre-push-gh-account.sh.template  (optional .git/hooks/ helper for multi-account gh CLI users)
     ├── nextjs-prisma/                       (7 files; baseline — GHA does the build)
     │   ├── README.md

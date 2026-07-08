@@ -3,7 +3,7 @@ pipeline: convoy=<slug>, brief=<N>
 skip: <comma-separated flags or empty>
 
 Skip flags (Conductor sets these — do not edit by hand):
-  ia, ux, arch, test, review, visual, a11y, design, smoke, qa, docs, flag
+  ia, ux, arch, test, review, security, visual, a11y, design, smoke, qa, docs, flag
 Never skip: plan-approval, pr-merge, prod-promote
 -->
 
@@ -33,11 +33,17 @@ Never skip: plan-approval, pr-merge, prod-promote
 <!-- Filled in by CI / role-reviewer. Don't edit. -->
 
 - [ ] CI: lint, types, build, unit tests
+- [ ] Forbidden patterns / npm audit (if installed)
 - [ ] Visual diff (if UI change)
 - [ ] A11y audit (if UI change)
 - [ ] Design-system audit (if UI change)
+- [ ] Security audit (if code change)
 - [ ] Reviewer report
 - [ ] Smoke on staging (after merge to develop)
+
+## Security notes
+
+<!-- Auth, permissions, or data-handling changes? Link security audit findings. -->
 
 ## Notes for reviewer
 

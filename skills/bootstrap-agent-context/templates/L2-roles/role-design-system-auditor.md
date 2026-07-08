@@ -8,7 +8,7 @@ description: >-
   audit framework + report template. Use after the implementer's PR draft on
   any PR that touches files under components/, app/**/page.tsx, app/**/layout.tsx,
   tokens/**, or tailwind.config.{ts,js}. Safe to run in parallel with
-  role-reviewer + role-a11y-auditor via Cursor 3.2 /multitask.
+  role-reviewer + role-security-auditor + role-a11y-auditor via Cursor 3.2 /multitask.
 multitask: audit-fanout
 model: composer-2.5-fast
 tools: [Read, Grep, Glob, Shell]

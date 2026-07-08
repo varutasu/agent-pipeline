@@ -52,12 +52,14 @@ model_policy:
     role-ux-reviewer: composer-2.5-fast
     role-implementer: composer-2.5-fast
     role-reviewer: composer-2.5-fast
+    role-security-auditor: composer-2.5-fast
     role-design-system-auditor: composer-2.5-fast
     role-a11y-auditor: composer-2.5-fast
     role-doc-writer: auto
   escalate_to: claude-4.6-opus-high-thinking
   never_premium:
     - role-reviewer
+    - role-security-auditor
     - role-design-system-auditor
     - role-a11y-auditor
     - role-doc-writer
@@ -78,11 +80,11 @@ Use these as starting points; trust the obvious cases:
 | Classification | Default skip flags | Reasoning |
 | --- | --- | --- |
 | `feature` | (none) | Full pipeline |
-| `hotfix` | `ia, ux, arch, review` | Speed over rigor; mandatory post-merge cleanup task |
-| `docs-only` | `ia, ux, arch, test, visual, a11y, design, smoke, qa, flag` | Docs change docs; CI lint catches typos |
-| `infra-only` | `ia, ux, arch, visual, a11y, design, smoke, qa, flag` | No UI; auditors no-op |
-| `server-only` | `ia, ux, visual, a11y, design` | API or worker change; no UI |
-| `config-only` | `ia, ux, arch, test, visual, a11y, design, smoke, qa, docs, flag` | env / CODEOWNERS / config file edit |
+| `hotfix` | `ia, ux, arch` | Speed over rigor; **still run** reviewer + security-auditor in audit fan-out |
+| `docs-only` | `ia, ux, arch, test, visual, a11y, design, security, smoke, qa, flag` | Docs only; no executable surface to audit |
+| `infra-only` | `ia, ux, arch, visual, a11y, design, smoke, qa, flag` | No UI; run security on IaC/workflow changes |
+| `server-only` | `ia, ux, visual, a11y, design` | API/worker; run reviewer + security-auditor |
+| `config-only` | `ia, ux, arch, test, visual, a11y, design, security, smoke, qa, docs, flag` | env / CODEOWNERS / config file edit |
 
 Never set: `plan-approval`, `pr-merge`, `prod-promote` (human gates are non-negotiable).
 
@@ -104,9 +106,9 @@ The Conductor doesn't run anything in parallel itself, but it **tells the user w
 
 | Classification | Recommended `/multitask` dispatch points |
 | --- | --- |
-| `feature` | After architect: dispatch implementers for all briefs with `depends_on: []` AND disjoint `files:` in parallel. After PR draft: dispatch reviewer + design-system-auditor + a11y-auditor as audit fan-out (group id: `audit-<slug>-<pr>`) |
-| `hotfix` | Audit fan-out only (reviewer + design-system-auditor + a11y-auditor) — planning is skipped, implementer is a single brief |
-| `server-only` | Audit fan-out, but drop design-system-auditor + a11y-auditor from the cohort (skip flags already set) — typically just reviewer |
+| `feature` | After architect: dispatch implementers for all briefs with `depends_on: []` AND disjoint `files:` in parallel. After PR draft: audit fan-out — `role-reviewer + role-security-auditor + role-design-system-auditor + role-a11y-auditor` (group id: `audit-<slug>-<pr>`) |
+| `hotfix` | Audit fan-out: `role-reviewer + role-security-auditor` (+ UI auditors only if UI touched) |
+| `server-only` | Audit fan-out: `role-reviewer + role-security-auditor` — drop design-system + a11y unless UI files in diff |
 | `docs-only` / `config-only` / `infra-only` | No multitask — single-writer flows; serial is fine |
 
 When implementer fan-out is on the table, **only flag briefs the architect has explicitly marked as parallelizable** in the `slice_dependencies:` block. If the architect didn't supply that block, recommend serial dispatch and note that the architect output is incomplete.
@@ -119,7 +121,7 @@ Include `model_policy:` in every convoy frontmatter (see Outputs). Tell the user
 
 1. **Parent session:** `auto` or `composer-2.5-fast` unless they are running conductor/architect in this chat.
 2. **Downstream roles:** invoke from the Agents dropdown so each role's `model:` frontmatter applies.
-3. **Audit fan-out:** fast models only — never Opus for reviewer / auditors.
+3. **Audit fan-out:** fast models only — never Opus for reviewer / security-auditor / auditors.
 
 Full policy: [`docs/model-routing-policy.md`](../../../../docs/model-routing-policy.md).
 

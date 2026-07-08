@@ -21,6 +21,7 @@
         "role-architect",
         "role-implementer",
         "role-reviewer",
+        "role-security-auditor",
         "role-design-system-auditor",
         "role-a11y-auditor",
         "role-doc-writer"

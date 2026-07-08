@@ -5,7 +5,7 @@ description: >-
   Runs `[skills/accessibility-audit](../../../accessibility-audit/SKILL.md)`
   for the rubric + report template. Use after the implementer's PR draft on
   PRs that touch UI files. Safe to run in parallel with role-reviewer +
-  role-design-system-auditor via Cursor 3.2 /multitask.
+  role-security-auditor + role-design-system-auditor via Cursor 3.2 /multitask.
 multitask: audit-fanout
 model: composer-2.5-fast
 tools: [Read, Grep, Glob, Shell]

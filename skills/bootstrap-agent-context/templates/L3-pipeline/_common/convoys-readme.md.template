@@ -61,6 +61,7 @@ The Conductor sets `skip:` based on classification. These flags map to pipeline 
 | `visual` | Visual diff |
 | `a11y` | A11y auditor |
 | `design` | Design-system auditor |
+| `security` | Security auditor |
 | `smoke` | Staging smoke |
 | `qa` | Manual QA |
 | `docs` | Doc Writer |
@@ -94,7 +95,7 @@ See `.cursor/agents/role-conductor.md` for the Conductor's full spec.
 **Audit fan-out** — after an implementer ships a PR draft:
 
 ```
-/multitask role-reviewer + role-design-system-auditor + role-a11y-auditor
+/multitask role-reviewer + role-security-auditor + role-design-system-auditor + role-a11y-auditor
 ```
 
 All three read the same diff and emit independent comments. Use group id `audit-<convoy>-<pr>` so analytics can compute wall-clock savings.

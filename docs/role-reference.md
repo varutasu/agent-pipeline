@@ -1,6 +1,6 @@
 # Role reference
 
-One-page summary of the 9 L2 subagent roles and the pipeline that connects them. Full role specs live in `skills/bootstrap-agent-context/templates/L2-roles/role-*.md` (and after install, in your repo at `.cursor/agents/role-*.md`).
+One-page summary of the 10 L2 subagent roles and the pipeline that connects them. Full role specs live in `skills/bootstrap-agent-context/templates/L2-roles/role-*.md` (and after install, in your repo at `.cursor/agents/role-*.md`).
 
 **Planning format:** pipeline convoys are Markdown files at `.convoys/<slug>.md` — not Cursor Plan files at `.cursor/plans/`. Start work with `role-conductor`. See `.convoys/README.md` and `.cursor/rules/convoy-planning.mdc` in bootstrapped repos.
 
@@ -39,15 +39,15 @@ One-page summary of the 9 L2 subagent roles and the pipeline that connects them.
                                             │
                                             ▼  PR draft (NOT auto-opened)
                   AUDIT FAN-OUT (Cursor 3.2 /multitask cohort):
-                  ┌─────────────────────┬──────────────────────────┬──────────────────┐
+                  ┌─────────────────────┬──────────────────────────┬──────────────────┬─────────────────────┐
                   ▼                     ▼                          ▼                  ▼
-        ┌─────────────────┐  ┌──────────────────────────┐  ┌─────────────────┐  (skip per
-        │  role-reviewer  │  │role-design-system-auditor│  │role-a11y-auditor│   skip flags)
-        │  scope + conv   │  │  tokens, primitives      │  │  labels, focus  │
-        └────────┬────────┘  └────────────┬─────────────┘  └────────┬────────┘
-                 │                        │                         │
-                 └────────────────────────┴─────────────────────────┘
-                                            ▼  three independent comments → PR Health rollup
+        ┌─────────────────┐  ┌──────────────────────────┐  ┌─────────────────┐  ┌─────────────────────┐
+        │  role-reviewer  │  │role-design-system-auditor│  │role-a11y-auditor│  │role-security-auditor│
+        │  scope + conv   │  │  tokens, primitives      │  │  labels, focus  │  │  auth, OWASP depth  │
+        └────────┬────────┘  └────────────┬─────────────┘  └────────┬────────┘  └──────────┬──────────┘
+                 │                        │                         │                        │
+                 └────────────────────────┴─────────────────────────┴────────────────────────┘
+                                            ▼  four independent comments → PR Health rollup
                                   ★ HUMAN GATE 2: PR merge ★
                                             ▼
                                    ┌─────────────────┐
@@ -57,7 +57,7 @@ One-page summary of the 9 L2 subagent roles and the pipeline that connects them.
                                   ★ HUMAN GATE 3: prod promote ★
 ```
 
-## The 9 roles
+## The 10 roles
 
 The `multitask` column declares each role's parallelism mode for Cursor 3.2+. See [`multitask-playbook.md`](multitask-playbook.md).
 
@@ -69,6 +69,7 @@ The `multitask` column declares each role's parallelism mode for Cursor 3.2+. Se
 | **architect** | File plan, schema diff, API surface; decompose into N briefs with `slice_dependencies:` | Append `## Architecture` + N `brief-N-*.md` files | Read, Grep, Glob, Shell | `single` | `claude-4.6-opus-high-thinking` |
 | **implementer** | Build one brief; stay strictly in scope; draft PR | Code changes + PR draft (not opened) | Read, Grep, Glob, Edit, Write, Shell | `per-brief` | `composer-2.5-fast` |
 | **reviewer** | Self-review the diff vs the brief; structured PR comment | Markdown comment ready to paste | Read, Grep, Glob, Shell | `audit-fanout` | `composer-2.5-fast` |
+| **security-auditor** | OWASP-style security audit — authz, injection, secrets, dependencies | Markdown comment (`## Security Audit`) | Read, Grep, Glob, Shell | `audit-fanout` | `composer-2.5-fast` |
 | **design-system-auditor** | Token violations, duplicate primitives, inline styles | Markdown comment | Read, Grep, Glob, Shell | `audit-fanout` | `composer-2.5-fast` |
 | **a11y-auditor** | Labels, keyboard, focus, contrast, semantic HTML | Markdown comment | Read, Grep, Glob, Shell | `audit-fanout` | `composer-2.5-fast` |
 | **doc-writer** | Changelog, AGENTS.md updates, schema map regen | Docs PR | Read, Grep, Glob, Edit, Write, Shell | `single` | `auto` |
@@ -82,11 +83,11 @@ The Conductor's classification drives default skips:
 | Classification | Default skips |
 | --- | --- |
 | `feature` | (none — full pipeline) |
-| `hotfix` | `ia, ux, arch, review` |
-| `docs-only` | `ia, ux, arch, test, visual, a11y, design, smoke, qa, flag` |
+| `hotfix` | `ia, ux, arch` |
+| `docs-only` | `ia, ux, arch, test, review, security, visual, a11y, design, smoke, qa, flag` |
 | `infra-only` | `ia, ux, arch, visual, a11y, design, smoke, qa, flag` |
 | `server-only` | `ia, ux, visual, a11y, design` |
-| `config-only` | `ia, ux, arch, test, visual, a11y, design, smoke, qa, docs, flag` |
+| `config-only` | `ia, ux, arch, test, review, security, visual, a11y, design, smoke, qa, docs, flag` |
 
 **Never skipped (mandatory human gates):** `plan-approval`, `pr-merge`, `prod-promote`.
 
@@ -114,6 +115,7 @@ The Conductor's classification drives default skips:
 | Decompose a large feature into PR-sized briefs | architect |
 | Implement one brief at a time | implementer |
 | Self-review your own PR before requesting human review | reviewer |
+| Audit a PR for security (auth, injection, secrets) | security-auditor |
 | Audit a UI PR for design-system violations | design-system-auditor |
 | Audit a UI PR for accessibility | a11y-auditor |
 | Update changelog + docs after a feature merges | doc-writer |

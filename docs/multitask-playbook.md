@@ -9,33 +9,33 @@ Every L2 role file declares its parallelism in frontmatter (`multitask: single |
 | Mode | What it means | Roles |
 | --- | --- | --- |
 | `single` | One instance at a time. Must run after the previous role. | conductor, ia-architect, ux-reviewer, architect, doc-writer |
-| `audit-fanout` | Read-only audit on a fixed input (the diff). Multiple roles in this mode read the same input and emit independent outputs. Safe to run as a parallel cohort. | reviewer, design-system-auditor, a11y-auditor |
+| `audit-fanout` | Read-only audit on a fixed input (the diff). Multiple roles in this mode read the same input and emit independent outputs. Safe to run as a parallel cohort. | reviewer, security-auditor, design-system-auditor, a11y-auditor |
 | `per-brief` | Multiple instances on different briefs at the same time. Requires worktree isolation and disjoint `files:` lists. | implementer |
 
 If a role isn't marked, treat it as `single`.
 
 ## Pattern A — Audit fan-out (recommended default)
 
-After `role-implementer` produces a PR draft, the three audit roles all consume the same diff and emit independent structured comments. They never write code and never modify the convoy file.
+After `role-implementer` produces a PR draft, the four audit roles all consume the same diff and emit independent structured comments. They never write code and never modify the convoy file.
 
 ### Trigger
 
 User runs:
 
-> *"/multitask run reviewer, design-system-auditor, and a11y-auditor on this PR"*
+> *"/multitask run reviewer, security-auditor, design-system-auditor, and a11y-auditor on this PR"*
 
-Or, equivalently, the user runs each one in three async subagents from the Agents Window.
+Or, equivalently, the user runs each one in four async subagents from the Agents Window.
 
 ### Hard rules
 
-1. **Audit roles never modify state.** All three are read + grep + comment. No writes to the diff, no edits to the convoy.
-2. **All three read the same diff snapshot.** If a parallel implementer is still running, wait — do not race against an in-flight edit.
-3. **All three emit a single comment.** The PR Health rollup workflow (`pr-health-rollup.yml`) concatenates the three comments into one rolled-up status check. No cohort coordination needed — outputs are timing-independent.
+1. **Audit roles never modify state.** All four are read + grep + comment. No writes to the diff, no edits to the convoy.
+2. **All four read the same diff snapshot.** If a parallel implementer is still running, wait — do not race against an in-flight edit.
+3. **All four emit a single comment.** The PR Health rollup workflow (`pr-health-rollup.yml`) concatenates the four comments into one rolled-up status check. No cohort coordination needed — outputs are timing-independent.
 4. **Convoy events stamp a shared `multitask_group`** so analytics can measure wall-clock savings vs. serial.
 
 ### Expected wins
 
-- ~3× wall-clock on the audit phase (the three roles were already independent; serializing them was an artifact of single-chat workflow).
+- ~4× wall-clock on the audit phase (the four roles were already independent; serializing them was an artifact of single-chat workflow).
 - **Lower token cost** when audit roles run on fast models (`composer-2.5-fast` per role frontmatter). Fan-out on Opus triples audit spend for the same diff — invoke roles from the Agents dropdown so `model:` applies. See [`model-routing-policy.md`](model-routing-policy.md).
 
 ### What stays sequential
@@ -140,7 +140,7 @@ The legacy `wt.sh` template in this fork now prints a deprecation notice pointin
 
 ## Analytics: how parallel events show up
 
-When you run an audit fan-out, all three audit roles emit a `convoy_event` with the same `multitask_group` value (a short string like `audit-<convoy>-<pr#>`).
+When you run an audit fan-out, all four audit roles emit a `convoy_event` with the same `multitask_group` value (a short string like `audit-<convoy>-<pr#>`).
 
 The aggregator (`analytics/analyze-convoys.ts`) can then compute wall-clock cohort cost as `max(duration_s within group)` instead of `sum(...)` — surfacing the real time savings.
 
@@ -163,7 +163,7 @@ If you're invoking via `/multitask`, the recommendation is to pre-compute the gr
 
 ```
 SAFE FAN-OUT
-├── audit phase: reviewer + design-system-auditor + a11y-auditor on the same PR
+├── audit phase: reviewer + security-auditor + design-system-auditor + a11y-auditor on the same PR
 └── implementer fleet: only when briefs have depends_on: [] AND disjoint files:
 
 UNSAFE FAN-OUT

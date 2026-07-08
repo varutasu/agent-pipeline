@@ -1,0 +1,49 @@
+---
+description: Authentication and authorization patterns for this repo
+globs: {{AUTH_GLOB_E_G_app/**}}
+---
+
+# Auth patterns
+
+<!--
+Bootstrap note: VERIFY against the actual repo before keeping.
+- Read the real auth module (e.g. lib/auth.ts, auth.ts, @/auth).
+- Replace placeholders below with real imports, helpers, and role shapes.
+- If the repo has no auth, DELETE this file.
+-->
+
+## Session / identity
+
+- **Library:** {{e.g. NextAuth v5, custom JWT, Clerk, Supabase Auth}}
+- **Server entry:** {{e.g. `import { auth } from '@/auth'`}}
+- **Session shape:** {{e.g. `session.user.id`, `session.user.roles[]`}}
+
+## Protected routes
+
+Use the repo's shared helpers — do not invent per-route auth:
+
+```ts
+{{AUTH_USAGE_EXAMPLE}}
+```
+
+## Authorization (not just authentication)
+
+- Every resource route checks **ownership or role** — not only "user is logged in".
+- Path/body IDs must match the authenticated principal unless the route is explicitly public/admin.
+- Admin gates use `{{ADMIN_HELPER}}` — do not copy-paste role checks.
+
+## Client vs server
+
+- Server components / API routes: auth via server helpers only.
+- Client components: `{{CLIENT_SESSION_HOOK}}` for UI state; never trust client role flags for security decisions.
+
+## Rate limiting
+
+- Auth endpoints (`login`, `register`, `forgot-password`) must use `{{RATE_LIMIT_HELPER}}` or equivalent.
+
+## Anti-patterns (block in review)
+
+- Missing auth on new `app/api/**` routes
+- `userId` from request body without matching session
+- Secrets or JWT signing keys with string fallbacks in source
+- Synthetic admin / "dev user" when token is missing

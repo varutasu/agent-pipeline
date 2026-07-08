@@ -1,0 +1,39 @@
+---
+description: Security baseline — secrets, input validation, auth boundaries, logging
+alwaysApply: true
+---
+
+# Security baseline
+
+Complements `no-go-zones.mdc` (what not to touch) with **how to write secure code**. For auth specifics, see `auth-patterns.mdc` and `api-routes.mdc` when installed.
+
+## Secrets
+
+- Never commit credentials, API keys, tokens, or private keys. Use environment variables.
+- Never log passwords, session tokens, or full payment details.
+- Never expose secrets to the browser (`NEXT_PUBLIC_*` is public forever).
+- If a secret appears in git history, rotate it — deleting the commit line is not enough.
+
+## Input & output
+
+- Validate every request body and untrusted query param at the API boundary (Zod or repo equivalent).
+- Parameterize database queries — no string concatenation with user input.
+- Return generic errors to clients; put details in server logs only.
+- Do not reflect raw user input into HTML without sanitization.
+
+## Auth
+
+- Protected routes must call the repo's auth helper **before** business logic.
+- Authorization: verify the session user may access **this** resource (IDOR prevention).
+- Rate-limit authentication endpoints (login, register, password reset).
+- No dev-only auth bypass in production code paths.
+
+## Dependencies
+
+- Run `npm audit` / `pnpm audit` before merging dependency changes.
+- Do not add packages for one-liners when the stdlib or an existing dep suffices.
+
+## Pipeline
+
+- For convoy work, run `role-security-auditor` in the audit fan-out unless `skip: security` is set.
+- Security findings with severity ≥ 3 block merge unless the convoy documents an accepted risk.

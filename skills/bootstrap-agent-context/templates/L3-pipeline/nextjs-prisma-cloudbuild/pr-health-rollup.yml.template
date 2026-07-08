@@ -64,6 +64,10 @@ jobs:
               owner, repo, issue_number: pr_number, per_page: 100,
             })).data.find(c => c.body?.startsWith('## Reviewer Report'));
 
+            const security_comment = (await github.rest.issues.listComments({
+              owner, repo, issue_number: pr_number, per_page: 100,
+            })).data.find(c => c.body?.startsWith('## Security Audit'));
+
             const a11y_comment = (await github.rest.issues.listComments({
               owner, repo, issue_number: pr_number, per_page: 100,
             })).data.find(c => c.body?.startsWith('## A11y Audit'));
@@ -77,6 +81,7 @@ jobs:
 
             const role_rows = [
               role_row('Reviewer report', reviewer_comment, skip('review')),
+              role_row('Security audit', security_comment, skip('security')),
               role_row('A11y audit', a11y_comment, skip('a11y')),
               role_row('Design system audit', ds_comment, skip('design')),
             ];

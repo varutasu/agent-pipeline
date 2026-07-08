@@ -6,7 +6,8 @@ description: >-
   expansion, security concerns, regression risk, and test coverage gaps.
   Read-only. Outputs a structured PR comment. Use after the implementer's
   PR draft and before the human merges. Safe to run in parallel with
-  role-design-system-auditor + role-a11y-auditor via Cursor 3.2 /multitask.
+  Safe to run in parallel with role-security-auditor + role-design-system-auditor +
+  role-a11y-auditor via Cursor 3.2 /multitask.
 multitask: audit-fanout
 model: composer-2.5-fast
 tools: [Read, Grep, Glob, Shell]
@@ -35,7 +36,7 @@ A single Markdown comment ready to paste into the PR (or to the user). Use this 
 | --- | --- | --- |
 | Scope match | ✅ / ⚠️ / ❌ | |
 | Conventions | ✅ / ⚠️ / ❌ | |
-| Security | ✅ / ⚠️ / ❌ | |
+| Security | ✅ / ⚠️ / ❌ | See `## Security Audit` when `role-security-auditor` ran; else quick L1–L2 pass only |
 | Regression risk | low / medium / high | |
 | Test coverage | ✅ / ⚠️ / ❌ | |
 | Documentation | ✅ / ⚠️ / ❌ | |
@@ -60,7 +61,7 @@ A single Markdown comment ready to paste into the PR (or to the user). Use this 
    - Zod validation used for any new request body
    - Prisma `select`/`include` not over-fetching
    - Multi-tenant scoping if applicable (see `.cursor/rules/auth-tenancy.mdc` if present)
-5. Security pass: any new endpoint without `requireAuth` / `requireAdmin`? Any user input flowing into a query without validation? Any secret in code?
+5. **Security (shallow pass).** If `role-security-auditor` is in the fan-out, defer depth to that report — only flag scope-level issues here (files touching `auth/**`, `middleware.*`, new API routes). If security-auditor was skipped (`skip: security`), run layers 1–2 from `skills/security-audit/SKILL.md` only.
 6. Regression risk: does this change a function with many callers? Use `Grep -r "<function name>"` to estimate blast radius.
 7. Test coverage: did the implementer add tests per the brief? Are they testing behavior or implementation?
 8. Documentation: AGENTS.md or rule needs updating? Changelog entry needed under `[Unreleased]`?
@@ -80,7 +81,7 @@ User reads the report. If approve → human gate 2 (merge). If request-changes �
 
 ## Multitask (audit fan-out)
 
-This role is part of the **audit fan-out cohort** (reviewer + design-system-auditor + a11y-auditor). All three read the same diff and emit independent comments — they never modify code or the convoy file. Safe to run in parallel via Cursor 3.2 `/multitask`.
+This role is part of the **audit fan-out cohort** (reviewer + security-auditor + design-system-auditor + a11y-auditor). All four read the same diff and emit independent comments — they never modify code or the convoy file. Safe to run in parallel via Cursor 3.2 `/multitask`.
 
 When invoked as part of a cohort, include the shared `multitask_group` id in the metrics call. The id convention is `audit-<convoy>-<pr>` (e.g. `audit-bookmark-badge-PR123`). See [`docs/multitask-playbook.md`](../../../../docs/multitask-playbook.md) Pattern A.
 

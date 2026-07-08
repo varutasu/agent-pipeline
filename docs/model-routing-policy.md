@@ -27,7 +27,7 @@ Validated on Trimble usage (Jan–Jun 2026): ~72% of spend was Opus-tier; ~37% c
 | Tier | `model_tier` value | Default model ID | Roles |
 | --- | --- | --- | --- |
 | Premium | `premium` | `claude-4.6-opus-high-thinking` | conductor, architect |
-| Fast | `fast` | `composer-2.5-fast` | ia-architect, ux-reviewer, implementer, reviewer, design-system-auditor, a11y-auditor |
+| Fast | `fast` | `composer-2.5-fast` | ia-architect, ux-reviewer, implementer, reviewer, security-auditor, design-system-auditor, a11y-auditor |
 | Auto | `auto` | `auto` | doc-writer |
 
 ### Escalation (premium)
@@ -54,12 +54,14 @@ model_policy:
     role-ux-reviewer: composer-2.5-fast
     role-implementer: composer-2.5-fast
     role-reviewer: composer-2.5-fast
+    role-security-auditor: composer-2.5-fast
     role-design-system-auditor: composer-2.5-fast
     role-a11y-auditor: composer-2.5-fast
     role-doc-writer: auto
   escalate_to: claude-4.6-opus-high-thinking
   never_premium:
     - role-reviewer
+    - role-security-auditor
     - role-design-system-auditor
     - role-a11y-auditor
     - role-doc-writer
@@ -69,10 +71,10 @@ Briefs may override with `recommended_model:` and `model_tier:` in frontmatter (
 
 ## Multitask + cost
 
-Audit fan-out saves **wall-clock**, not tokens, when all three auditors run on Opus. Run the cohort on **fast** models:
+Audit fan-out saves **wall-clock**, not tokens, when all four auditors run on Opus. Run the cohort on **fast** models:
 
 ```
-/multitask role-reviewer + role-design-system-auditor + role-a11y-auditor
+/multitask role-reviewer + role-security-auditor + role-design-system-auditor + role-a11y-auditor
 ```
 
 Invoke each role from the Agents dropdown (or ensure subagent model is `composer-2.5-fast`). See [`multitask-playbook.md`](multitask-playbook.md).

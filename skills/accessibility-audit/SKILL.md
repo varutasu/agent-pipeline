@@ -24,7 +24,7 @@ Five-layer audit framework keyed to **WCAG 2.2** (W3C, October 2023). Outputs a 
 
 - **Automatic:** by `role-a11y-auditor` when a convoy's PR draft touches `app/**`, `components/**`, or any UI surface.
 - **Manual:** when the user says *"audit this for a11y"*, *"check accessibility"*, *"can a screen reader use this"*, or names a WCAG criterion (`2.1.1`, `1.4.3`, etc.).
-- **Pre-merge:** when an audit fan-out runs (`/multitask role-reviewer + role-design-system-auditor + role-a11y-auditor` per the multitask playbook).
+- **Pre-merge:** when an audit fan-out runs (`/multitask role-reviewer + role-security-auditor + role-design-system-auditor + role-a11y-auditor` per the multitask playbook).
 
 ## Severity scale
 

@@ -6,10 +6,27 @@ All notable changes to `agent-pipeline` are documented here. This file follows [
 
 ### Added
 
+- **`skills/security-audit/`** — OWASP-style 6-layer audit skill (checklist, report template with `## Security Audit` header). Mirrors Phase 1a design skills.
+- **`role-security-auditor.md`** — 10th L2 role; `multitask: audit-fanout`; runs in parallel with reviewer + UI auditors.
+- **`templates/L1-context/security-baseline.mdc.template`** — always-on secure-coding rule (when L2/L3 installed).
+- **`templates/L1-context/auth-patterns.mdc.template`** — glob-scoped auth/IDOR placeholder (like `api-routes.mdc`).
+- **`templates/L3-pipeline/_common/forbidden-patterns.yml.template`** — optional grep CI gate for secrets and dangerous APIs.
+- **`templates/L3-pipeline/_common/npm-audit-gate.yml.template`** — optional high-severity dependency audit workflow.
+- **`docs/pr-review-and-security.md`** — one-pager: agent audit fan-out vs human Gate 2 vs CI gates.
+
+### Changed
+
+- **Audit fan-out** — four roles: `reviewer + security-auditor + design-system-auditor + a11y-auditor` (was three). Updated conductor, convoys README, multitask playbook, model routing, PR template, and all four `pr-health-rollup.yml` variants.
+- **`role-conductor.md`** — hotfix no longer skips `review`; docs-only/config-only skip `security`; `model_policy` includes `role-security-auditor`.
+- **`role-reviewer.md`** — security table row delegates to `## Security Audit` when security auditor ran.
+- **`bootstrap-agent-context/SKILL.md`** — Step 2b-iv (`security-baseline`), auth-patterns in 2c, `security-audit` in wave 1a, 10 L2 roles, optional L3 security gates.
+- **`docs/role-reference.md`** — 10 roles; hotfix skip flags updated.
+- **`tests/smoke.sh`** — asserts 10 L2 roles; `convoy-event.json` includes `role-security-auditor`.
+
 - **`templates/L1-context/convoy-planning.mdc.template`** — always-on rule (when L2/L3 installed) that directs pipeline planning to `.convoys/<slug>.md` instead of Cursor's native `.cursor/plans/*.plan.md`. Addresses repeated confusion where agents use Plan mode for convoy work.
 - **`AGENTS.md.template` section 10 (Convoys)** — short pointer to convoy files, role-conductor, and the new rule. Bootstrap deletes this section for L1-only installs.
 
-### Changed
+### Changed (convoy-planning, prior unreleased)
 
 - **`role-conductor.md`** — new anti-pattern: do not write to `.cursor/plans/` or use Cursor Plan mode for convoys.
 - **`convoys-readme.md.template`** — callout block distinguishing convoys from Cursor Plan mode.
