@@ -1,6 +1,6 @@
 # Role reference
 
-One-page summary of the 10 L2 subagent roles and the pipeline that connects them. Full role specs live in `skills/bootstrap-agent-context/templates/L2-roles/role-*.md` (and after install, in your repo at `.cursor/agents/role-*.md`).
+One-page summary of the 11 L2 subagent roles and the pipeline that connects them. Full role specs live in `skills/bootstrap-agent-context/templates/L2-roles/role-*.md` (and after install, in your repo at `.cursor/agents/role-*.md`).
 
 **Planning format:** pipeline convoys are Markdown files at `.convoys/<slug>.md` — not Cursor Plan files at `.cursor/plans/`. Start work with `role-conductor`. See `.convoys/README.md` and `.cursor/rules/convoy-planning.mdc` in bootstrapped repos.
 
@@ -16,6 +16,10 @@ One-page summary of the 10 L2 subagent roles and the pipeline that connects them
         ┌─────────────────┐                                 ┌───────────────────┐
         │ role-ia-architect│  routes, screens, content     │ (skip if non-UI)  │
         └────────┬────────┘                                 └─────────┬─────────┘
+                 ▼                                                    │
+        ┌─────────────────┐                                           │
+        │role-ui-designer │  lock design_direction (opt-in)           │
+        └────────┬────────┘                                           │
                  ▼                                                    │
         ┌─────────────────┐                                           │
         │ role-ux-reviewer│  reuse primitives, a11y constraints       │
@@ -57,7 +61,7 @@ One-page summary of the 10 L2 subagent roles and the pipeline that connects them
                                   ★ HUMAN GATE 3: prod promote ★
 ```
 
-## The 10 roles
+## The 11 roles
 
 The `multitask` column declares each role's parallelism mode for Cursor 3.2+. See [`multitask-playbook.md`](multitask-playbook.md).
 
@@ -65,6 +69,7 @@ The `multitask` column declares each role's parallelism mode for Cursor 3.2+. Se
 | --- | --- | --- | --- | --- | --- |
 | **conductor** | Classify the work; write the convoy file; set skip flags; recommend dispatch points | `.convoys/<slug>.md` | Read, Grep, Glob, Write, Shell | `single` | `claude-4.6-opus-high-thinking` |
 | **ia-architect** | Map idea to existing IA — sitemap, user flow, screens | Append `## IA` section to convoy | Read, Grep, Glob, Shell | `single` | `composer-2.5-fast` |
+| **ui-designer** | Greenfield / redesign: generate + lock `design_direction` via `ui-ux-pro-max` | Append `## Design direction` + frontmatter | Read, Grep, Glob, Write, Shell | `single` | `composer-2.5-fast` |
 | **ux-reviewer** | Reuse existing components; list a11y constraints | Append `## UX` section to convoy | Read, Grep, Glob, Shell | `single` | `composer-2.5-fast` |
 | **architect** | File plan, schema diff, API surface; decompose into N briefs with `slice_dependencies:` | Append `## Architecture` + N `brief-N-*.md` files | Read, Grep, Glob, Shell | `single` | `claude-4.6-opus-high-thinking` |
 | **implementer** | Build one brief; stay strictly in scope; draft PR | Code changes + PR draft (not opened) | Read, Grep, Glob, Edit, Write, Shell | `per-brief` | `composer-2.5-fast` |
@@ -83,11 +88,11 @@ The Conductor's classification drives default skips:
 | Classification | Default skips |
 | --- | --- |
 | `feature` | (none — full pipeline) |
-| `hotfix` | `ia, ux, arch` |
-| `docs-only` | `ia, ux, arch, test, review, security, visual, a11y, design, smoke, qa, flag` |
-| `infra-only` | `ia, ux, arch, visual, a11y, design, smoke, qa, flag` |
-| `server-only` | `ia, ux, visual, a11y, design` |
-| `config-only` | `ia, ux, arch, test, review, security, visual, a11y, design, smoke, qa, docs, flag` |
+| `hotfix` | `ia, ux, ui-design, arch` |
+| `docs-only` | `ia, ux, ui-design, arch, test, review, security, visual, a11y, design, smoke, qa, flag` |
+| `infra-only` | `ia, ux, ui-design, arch, visual, a11y, design, smoke, qa, flag` |
+| `server-only` | `ia, ux, ui-design, visual, a11y, design` |
+| `config-only` | `ia, ux, ui-design, arch, test, review, security, visual, a11y, design, smoke, qa, docs, flag` |
 
 **Never skipped (mandatory human gates):** `plan-approval`, `pr-merge`, `prod-promote`.
 
@@ -111,6 +116,7 @@ The Conductor's classification drives default skips:
 | --- | --- |
 | Start a new feature with no plan yet | conductor |
 | Vet a feature spec for IA gaps before writing code | ia-architect |
+| Establish visual direction for a new UI surface (opt-in skill) | ui-designer |
 | Audit a draft UI design before implementation | ux-reviewer |
 | Decompose a large feature into PR-sized briefs | architect |
 | Implement one brief at a time | implementer |

@@ -23,6 +23,7 @@ After `role-reviewer` on PRs that touch UI files or DS tokens. Skip when convoy 
 ## Inputs
 
 - The PR diff.
+- Convoy `design_direction:` + `## Design direction` (if present — enforce the lock).
 - Design tokens: `tailwind.config.ts`, `app/globals.css` CSS variables, `tokens/**` (or equivalent).
 - Component primitives directory: `components/ui/` (or `src/components/ui/`).
 - Any rule scoped to `components.mdc`, `styling.mdc`, `design-system.mdc`.
@@ -48,11 +49,12 @@ Posted as:
 3. Read tokens + component primitives directory once (load the vocabulary).
 4. **Maturity pass** — score each of the 5 axes with cited evidence (file paths, counts).
 5. **Token audit** — apply the 3-tier check (primitives / aliases / components). See `references/token-architecture.md` for the checklist.
-6. **Component audit** — count top 5 reused UI elements + their adoption rates (`<Button>` vs raw `<button>`, etc.). Identify missing primitives that should exist.
-7. **Governance audit** — is there a contribution doc? Who reviews? Last 3 primitives' provenance.
-8. **Adoption audit** — pick one surface, count DS vs raw HTML.
-9. Fill the audit-report template.
-10. Post the report. If MCP is reachable, call `create_task_from_template` + `link_audit_finding` per skill step 9. On failure, queue to `.convoys/.pending-mcp-sync.jsonl`.
+6. **Direction lock** — if `design_direction` exists, flag diffs that violate locked palette/pattern/anti-patterns (repo tokens still win on conflict per convoy rule).
+7. **Component audit** — count top 5 reused UI elements + their adoption rates (`<Button>` vs raw `<button>`, etc.). Identify missing primitives that should exist.
+8. **Governance audit** — is there a contribution doc? Who reviews? Last 3 primitives' provenance.
+9. **Adoption audit** — pick one surface, count DS vs raw HTML.
+10. Fill the audit-report template.
+11. Post the report. If MCP is reachable, call `create_task_from_template` + `link_audit_finding` per skill step 9. On failure, queue to `.convoys/.pending-mcp-sync.jsonl`.
 
 ## Multitask (audit fan-out)
 

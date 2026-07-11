@@ -32,6 +32,16 @@ created: <YYYY-MM-DD>
 model_policy:
   default_session: auto
   roles: { ... }   # see docs/model-routing-policy.md
+design_direction:                  # optional — set by role-ui-designer (planning lock)
+  source: role-ui-designer
+  skill: ui-ux-pro-max
+  skill_version: "2.5.0"
+  version: 1
+  locked_at: YYYY-MM-DD
+  product_type: ""
+  pattern: ""
+  style: ""
+  stack: nextjs
 ---
 ```
 
@@ -42,8 +52,9 @@ Body sections (added in order by the pipeline roles):
 3. `## Roles invoked` (Conductor)
 4. `## Todos` (Conductor → refined by Architect)
 5. `## IA` (IA Architect)
-6. `## UX` (UX Reviewer)
-7. `## Architecture` (Architect)
+6. `## Design direction` (UI Designer — optional; skip when `ui-design` set)
+7. `## UX` (UX Reviewer)
+8. `## Architecture` (Architect)
 
 After Architect, briefs live in `.convoys/<slug>/brief-N-*.md`. Implementers read only their brief, not the whole convoy.
 
@@ -55,6 +66,7 @@ The Conductor sets `skip:` based on classification. These flags map to pipeline 
 | --- | --- |
 | `ia` | IA Architect |
 | `ux` | UX Reviewer |
+| `ui-design` | UI Designer (planning; `ui-ux-pro-max` skill) |
 | `arch` | Architect |
 | `test` | Component tests |
 | `review` | Reviewer |

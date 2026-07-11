@@ -8,7 +8,7 @@ Every L2 role file declares its parallelism in frontmatter (`multitask: single |
 
 | Mode | What it means | Roles |
 | --- | --- | --- |
-| `single` | One instance at a time. Must run after the previous role. | conductor, ia-architect, ux-reviewer, architect, doc-writer |
+| `single` | One instance at a time. Must run after the previous role. | conductor, ia-architect, ui-designer, ux-reviewer, architect, doc-writer |
 | `audit-fanout` | Read-only audit on a fixed input (the diff). Multiple roles in this mode read the same input and emit independent outputs. Safe to run as a parallel cohort. | reviewer, security-auditor, design-system-auditor, a11y-auditor |
 | `per-brief` | Multiple instances on different briefs at the same time. Requires worktree isolation and disjoint `files:` lists. | implementer |
 

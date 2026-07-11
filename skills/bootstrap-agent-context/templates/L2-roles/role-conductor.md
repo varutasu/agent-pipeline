@@ -50,6 +50,7 @@ model_policy:
     role-architect: claude-4.6-opus-high-thinking
     role-ia-architect: composer-2.5-fast
     role-ux-reviewer: composer-2.5-fast
+    role-ui-designer: composer-2.5-fast
     role-implementer: composer-2.5-fast
     role-reviewer: composer-2.5-fast
     role-security-auditor: composer-2.5-fast
@@ -62,6 +63,7 @@ model_policy:
     - role-security-auditor
     - role-design-system-auditor
     - role-a11y-auditor
+    - role-ui-designer
     - role-doc-writer
 ---
 ```
@@ -80,11 +82,11 @@ Use these as starting points; trust the obvious cases:
 | Classification | Default skip flags | Reasoning |
 | --- | --- | --- |
 | `feature` | (none) | Full pipeline |
-| `hotfix` | `ia, ux, arch` | Speed over rigor; **still run** reviewer + security-auditor in audit fan-out |
-| `docs-only` | `ia, ux, arch, test, visual, a11y, design, security, smoke, qa, flag` | Docs only; no executable surface to audit |
-| `infra-only` | `ia, ux, arch, visual, a11y, design, smoke, qa, flag` | No UI; run security on IaC/workflow changes |
-| `server-only` | `ia, ux, visual, a11y, design` | API/worker; run reviewer + security-auditor |
-| `config-only` | `ia, ux, arch, test, visual, a11y, design, security, smoke, qa, docs, flag` | env / CODEOWNERS / config file edit |
+| `hotfix` | `ia, ux, ui-design, arch` | Speed over rigor; **still run** reviewer + security-auditor in audit fan-out |
+| `docs-only` | `ia, ux, ui-design, arch, test, visual, a11y, design, security, smoke, qa, flag` | Docs only; no executable surface to audit |
+| `infra-only` | `ia, ux, ui-design, arch, visual, a11y, design, smoke, qa, flag` | No UI; run security on IaC/workflow changes |
+| `server-only` | `ia, ux, ui-design, visual, a11y, design` | API/worker; run reviewer + security-auditor |
+| `config-only` | `ia, ux, ui-design, arch, test, visual, a11y, design, security, smoke, qa, docs, flag` | env / CODEOWNERS / config file edit |
 
 Never set: `plan-approval`, `pr-merge`, `prod-promote` (human gates are non-negotiable).
 
@@ -96,6 +98,15 @@ Never set: `plan-approval`, `pr-merge`, `prod-promote` (human gates are non-nego
 4. Write `.convoys/<slug>.md` with frontmatter + four sections.
 5. Print a one-line summary: *"Convoy `<slug>` created (classification: `<X>`, skipping: `<flags>`). Next role: <role-X>."*
 
+### UI designer recommendation (`ui-design` skip)
+
+For `feature` convoys with **new or redesigned** UI surfaces (landing, new app area, major visual refresh):
+
+- If `.cursor/skills/ui-ux-pro-max/` is installed → recommend **`role-ui-designer`** after IA (before UX Reviewer). Do **not** set `skip: ui-design`.
+- If the change is **incremental** inside an existing design system (small tweak, one new column, bugfix UI) → add `ui-design` to `skip:` and go straight to `role-ux-reviewer`.
+
+Record the chosen path in `## Roles invoked`.
+
 ## Hand-off
 
 Hand off by message to the user, not by spawning another role automatically. The user runs the next role manually (they can paste *"role-ia-architect"* into the chat or open a new chat and reference the convoy). This keeps the human in the loop for the early stages where direction is most plastic.
@@ -106,7 +117,7 @@ The Conductor doesn't run anything in parallel itself, but it **tells the user w
 
 | Classification | Recommended `/multitask` dispatch points |
 | --- | --- |
-| `feature` | After architect: dispatch implementers for all briefs with `depends_on: []` AND disjoint `files:` in parallel. After PR draft: audit fan-out — `role-reviewer + role-security-auditor + role-design-system-auditor + role-a11y-auditor` (group id: `audit-<slug>-<pr>`) |
+| `feature` | Planning: `role-ui-designer` (if greenfield UI + skill installed, before UX Reviewer). After architect: dispatch implementers for briefs with `depends_on: []` AND disjoint `files:` in parallel. After PR draft: audit fan-out — `role-reviewer + role-security-auditor + role-design-system-auditor + role-a11y-auditor` (group id: `audit-<slug>-<pr>`) |
 | `hotfix` | Audit fan-out: `role-reviewer + role-security-auditor` (+ UI auditors only if UI touched) |
 | `server-only` | Audit fan-out: `role-reviewer + role-security-auditor` — drop design-system + a11y unless UI files in diff |
 | `docs-only` / `config-only` / `infra-only` | No multitask — single-writer flows; serial is fine |

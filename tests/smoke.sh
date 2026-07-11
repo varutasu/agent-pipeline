@@ -43,8 +43,8 @@ for ref in $(grep -oE 'templates/[A-Za-z0-9_./-]+' "$SKILL" | sort -u); do
 done
 [ "$MISSING" -eq 0 ] && ok "All $(grep -oE 'templates/[A-Za-z0-9_./-]+' "$SKILL" | sort -u | wc -l | tr -d ' ') template references resolve"
 
-# All 10 L2 roles present
-for role in conductor ia-architect ux-reviewer architect implementer reviewer security-auditor \
+# All 11 L2 roles present
+for role in conductor ia-architect ui-designer ux-reviewer architect implementer reviewer security-auditor \
             design-system-auditor a11y-auditor doc-writer; do
   f="$SKILL_DIR/templates/L2-roles/role-$role.md"
   if [ -f "$f" ]; then ok "L2 role exists: role-$role.md"

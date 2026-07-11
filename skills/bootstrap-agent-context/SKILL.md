@@ -55,7 +55,7 @@ Bootstrap progress:
 - [ ] Step 0: Detect stack, multi-root workspace, and existing state
 - [ ] Step 1: Confirm which layers to install (L1 / L2 / L3)
 - [ ] Step 2: L1 — AGENTS.md, no-go-zones, stack rules, skills, (Prisma) schema map, agent-context README
-- [ ] Step 3: L2 — 10 role files in .cursor/agents/
+- [ ] Step 3: L2 — 11 role files in .cursor/agents/
 - [ ] Step 3.5: Print multitask cheat sheet (Cursor 3.2+ /multitask dispatch points)
 - [ ] Step 4: L3 — pick stack variant; copy CI + PR template + CODEOWNERS + convoys + optional extras
 - [ ] Step 4.7: Write `.agent-context-manifest.yml` listing every artifact installed (used by `sync-agent-context` for drift detection)
@@ -124,7 +124,7 @@ Use `AskQuestion` with these questions, allow_multiple where indicated:
 
 1. **Which layers to install?** (allow_multiple = true)
    - L1 — Context (AGENTS.md, rules, skills, schema map)
-   - L2 — Subagent roles (10 role-*.md files)
+   - L2 — Subagent roles (11 role-*.md files)
    - L3 — Pipeline scaffolding (CI, PR template, CODEOWNERS, convoys)
 
 2. **For existing files, prefer:** (single-select; only ask if any layer collides with existing files)
@@ -238,17 +238,22 @@ Wave 1c — output craft + ops (parallel-safe; ships v0.4.0):
   [ ] ux-writing                (voice, error copy, microcopy)
   [ ] design-elevation          (visual polish, hierarchy, taste)
   [ ] design-ops-handoff        (Figma → code, specs, redlines)
+
+Wave 1d — greenfield design direction (opt-in; requires Python 3):
+  [ ] ui-ux-pro-max             (industry design-system generator; paired with role-ui-designer)
+  [ ] role-ui-designer          (install `.cursor/agents/role-ui-designer.md` when skill checked)
 ```
 
-Default: **wave 1a checked, others unchecked**. Selecting all 10 is one keystroke ("a" / select-all).
+Default: **wave 1a checked, 1d unchecked, others unchecked**. Selecting all 10 cuellarfr domains is one keystroke ("a" / select-all). Wave 1d is independent — check only for repos that ship greenfield UI.
 
 Per skill chosen:
 
-1. Copy `agent-pipeline/skills/<name>/` → consumer `.cursor/skills/<name>/` verbatim. **Don't customize the SKILL.md** — these are versioned + tracked in the manifest.
-2. Record in `.agent-context-manifest.yml` under `artifacts:` with `customized: false`.
-3. Verify the corresponding L2 role file references the skill (audit-aligned skills are referenced by `role-a11y-auditor`, `role-ux-reviewer`, `role-design-system-auditor`, `role-security-auditor` respectively).
+1. Copy `agent-pipeline/skills/<name>/` → consumer `.cursor/skills/<name>/` verbatim. **Don't customize the SKILL.md** — these are versioned + tracked in the manifest. For `ui-ux-pro-max`, copy the full directory (`data/`, `scripts/`, `LICENSE`, `UPSTREAM.md`).
+2. If `role-ui-designer` is selected, also copy `templates/L2-roles/role-ui-designer.md` → `.cursor/agents/role-ui-designer.md`.
+3. Record in `.agent-context-manifest.yml` under `artifacts:` with `customized: false`.
+4. Verify the corresponding L2 role file references the skill (`role-ui-designer` → `ui-ux-pro-max`; audit-aligned skills are referenced by `role-a11y-auditor`, `role-ux-reviewer`, `role-design-system-auditor`, `role-security-auditor` respectively).
 
-**Phase 1a status (v0.4.0-beta.1):** `accessibility-audit`, `design-critique`, `design-systems`, `security-audit` exist + are installable. The other 7 are placeholders for Phase 1b/1c; checking them surfaces a "(not yet implemented — coming in v0.4.0)" notice and skips that line. Stub the entries so the user's selection is preserved when 1b/1c land via `sync-agent-context`.
+**Phase 1a status (v0.4.0-beta.1):** `accessibility-audit`, `design-critique`, `design-systems`, `security-audit` exist + are installable. **Wave 1d:** `ui-ux-pro-max` + `role-ui-designer` ship at v0.6.x. The other 7 cuellarfr placeholders are for Phase 1b/1c; checking them surfaces a "(not yet implemented — coming in v0.4.0)" notice and skips that line. Stub the entries so the user's selection is preserved when 1b/1c land via `sync-agent-context`.
 
 Attribution: every installed `SKILL.md` already carries the cuellarfr/design-skills MIT header. Don't strip it.
 
@@ -262,6 +267,7 @@ Skip this step if the user opted out of L2.
 | --- | --- |
 | `templates/L2-roles/role-conductor.md` | `.cursor/agents/role-conductor.md` |
 | `templates/L2-roles/role-ia-architect.md` | `.cursor/agents/role-ia-architect.md` |
+| `templates/L2-roles/role-ui-designer.md` | `.cursor/agents/role-ui-designer.md` (only if wave 1d / ui-ux-pro-max opted in) |
 | `templates/L2-roles/role-ux-reviewer.md` | `.cursor/agents/role-ux-reviewer.md` |
 | `templates/L2-roles/role-architect.md` | `.cursor/agents/role-architect.md` |
 | `templates/L2-roles/role-implementer.md` | `.cursor/agents/role-implementer.md` |
@@ -271,7 +277,7 @@ Skip this step if the user opted out of L2.
 | `templates/L2-roles/role-a11y-auditor.md` | `.cursor/agents/role-a11y-auditor.md` |
 | `templates/L2-roles/role-doc-writer.md` | `.cursor/agents/role-doc-writer.md` |
 
-For server-only or CLI repos with no UI, omit `role-ux-reviewer`, `role-design-system-auditor`, `role-a11y-auditor`. Keep `role-security-auditor` — security applies to API and server code. The Conductor will set `skip: ux, design, a11y` on convoys for those repos either way; omitting the UI role files just keeps the dropdown clean.
+For server-only or CLI repos with no UI, omit `role-ux-reviewer`, `role-ui-designer`, `role-design-system-auditor`, `role-a11y-auditor`. Keep `role-security-auditor` — security applies to API and server code. The Conductor will set `skip: ux, ui-design, design, a11y` on convoys for those repos either way; omitting the UI role files just keeps the dropdown clean.
 
 If any role file already exists at the destination, propose a diff or write a `.proposed` sibling — do not overwrite.
 
@@ -486,7 +492,7 @@ End your reply with:
 - [ ] (Prisma) Skim `docs/SCHEMA_MAP.md` and confirm `MODEL_GROUPS` looks right.
 
 ### L2 (if installed)
-- [ ] Open Cursor → Agents dropdown; verify the 10 roles appear.
+- [ ] Open Cursor → Agents dropdown; verify the 11 roles appear (10 if `role-ui-designer` not installed).
 - [ ] Read `role-conductor.md` end-to-end; the rest follow the same shape.
 - [ ] Try a dry-run: ask "Run role-conductor on idea: <X>" in a new chat.
 - [ ] On Cursor 3.2+: try the audit fan-out on a real PR — `/multitask role-reviewer + role-security-auditor + role-design-system-auditor + role-a11y-auditor` and confirm four independent comments arrive.
@@ -556,9 +562,10 @@ templates/
 │   ├── agent-context-readme.md.template
 │   ├── agent-context-manifest.yml.template  (Step 4.7 writes this; tracked by sync-agent-context)
 │   └── validation.md.template
-├── L2-roles/                                (10 files; copy verbatim)
+├── L2-roles/                                (11 files; copy verbatim — ui-designer optional at install)
 │   ├── role-conductor.md
 │   ├── role-ia-architect.md
+│   ├── role-ui-designer.md
 │   ├── role-ux-reviewer.md
 │   ├── role-architect.md
 │   ├── role-implementer.md

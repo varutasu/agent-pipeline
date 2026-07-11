@@ -17,6 +17,7 @@
       "enum": [
         "role-conductor",
         "role-ia-architect",
+        "role-ui-designer",
         "role-ux-reviewer",
         "role-architect",
         "role-implementer",

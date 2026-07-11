@@ -30,3 +30,5 @@ tests/fixtures/**/lib/
 
 # Per-machine install marker (lives in $HOME, not here, but defensive)
 .agent-pipeline-install
+**/__pycache__/
+*.pyc

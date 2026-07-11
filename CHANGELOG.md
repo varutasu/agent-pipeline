@@ -6,6 +6,21 @@ All notable changes to `agent-pipeline` are documented here. This file follows [
 
 ### Added
 
+- **`skills/ui-ux-pro-max/`** — vendored MIT design-intelligence skill (BM25 search + design-system generator); opt-in at bootstrap (wave 1d).
+- **`role-ui-designer.md`** — 11th L2 role; planning-only; locks `design_direction` on the convoy; paired with `ui-ux-pro-max`.
+- **`design_direction` convoy frontmatter** — versioned lock; documented in `.convoys/README.md`.
+
+### Changed
+
+- **`role-conductor.md`** — `ui-design` skip flag; recommends UI Designer for greenfield UI features.
+- **`role-ux-reviewer.md`** — reads locked direction; does not re-run generator.
+- **`role-design-system-auditor.md`** — enforces `design_direction` on PR diffs.
+- **`bootstrap-agent-context/SKILL.md`** — wave 1d opt-in; 11 L2 roles.
+
+## [Unreleased] (Phase 5.1 security — prior entry)
+
+### Added
+
 - **`skills/security-audit/`** — OWASP-style 6-layer audit skill (checklist, report template with `## Security Audit` header). Mirrors Phase 1a design skills.
 - **`role-security-auditor.md`** — 10th L2 role; `multitask: audit-fanout`; runs in parallel with reviewer + UI auditors.
 - **`templates/L1-context/security-baseline.mdc.template`** — always-on secure-coding rule (when L2/L3 installed).

@@ -20,6 +20,8 @@ tools: [Read, Grep, Glob, Shell]
 
 After `role-ia-architect` for any classification that includes UI work. Skip when convoy frontmatter has `skip: ux`.
 
+If `design_direction` is locked in the convoy frontmatter, **read it** and map reuse/constraints to that direction — do **not** re-run `ui-ux-pro-max`.
+
 Two invocation modes:
 
 1. **Sequential UX-pass** (default) — appends a `## UX` section to the convoy file. Feeds the Architect. Lightweight.
@@ -28,6 +30,7 @@ Two invocation modes:
 ## Inputs
 
 - The convoy file (with the IA section appended).
+- `design_direction:` in convoy frontmatter and `## Design direction` (if present — from `role-ui-designer`).
 - Existing UI primitives directory (`components/ui/` or equivalent).
 - Design tokens (`tailwind.config.ts`, `app/globals.css` CSS variables, or `tokens/**`).
 - Any rule scoped to `components.mdc`, `styling.mdc`, `design-system.mdc`.
@@ -40,11 +43,12 @@ Two invocation modes:
 Append a `## UX` section to the convoy file with:
 
 1. **Existing components to reuse** — bullet list of `<ComponentName>` (`path/to/file.tsx`) for each reusable primitive the screens need. Name the file.
-2. **Existing patterns to follow** — referenced rules and example screens that solve a similar problem.
-3. **A11y constraints** — bullets enumerating required ARIA labels, keyboard navigation paths, focus management, color-contrast requirements specific to this change. Hand to `role-a11y-auditor`.
-4. **Interaction patterns** — short list with `required` / `nice-to-have` annotations: hover/focus/active states, optimistic UI, error states, empty states, loading states. Cite Nielsen heuristic # per pattern (`H1` for loading, `H9` for errors, etc.).
-5. **Anti-patterns to avoid** — explicit list of what NOT to do, with the violated heuristic in parens.
-6. **Mobile / responsive notes** — mandatory if UI is touched.
+2. **Design direction alignment** — how locked `design_direction` maps to repo tokens (or note conflicts deferred to human).
+3. **Existing patterns to follow** — referenced rules and example screens that solve a similar problem.
+4. **A11y constraints** — bullets enumerating required ARIA labels, keyboard navigation paths, focus management, color-contrast requirements specific to this change. Hand to `role-a11y-auditor`.
+5. **Interaction patterns** — short list with `required` / `nice-to-have` annotations: hover/focus/active states, optimistic UI, error states, empty states, loading states. Cite Nielsen heuristic # per pattern (`H1` for loading, `H9` for errors, etc.).
+6. **Anti-patterns to avoid** — explicit list of what NOT to do, with the violated heuristic in parens.
+7. **Mobile / responsive notes** — mandatory if UI is touched.
 
 ### Mode 2: Critique pass
 
@@ -83,3 +87,4 @@ Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed)
 - Designing the schema or API → wrong, that's Architect.
 - Critiquing without citing a Nielsen heuristic or UX law → wrong (see `design-critique` anti-patterns). Every finding cites evidence.
 - Carrying the 9-step critique framework inline in this role file → wrong. Read the skill.
+- Re-running `ui-ux-pro-max` or rewriting `## Design direction` → wrong, that's `role-ui-designer`.

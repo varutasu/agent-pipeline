@@ -18,7 +18,7 @@ Cursor subagent roles in `.cursor/agents/role-*.md` declare a `model:` in frontm
 | Tier | Roles | Model |
 | --- | --- | --- |
 | Premium | conductor, architect | `claude-4.6-opus-high-thinking` |
-| Fast | ia-architect, ux-reviewer, implementer, reviewer, security-auditor, design-system-auditor, a11y-auditor | `composer-2.5-fast` |
+| Fast | ia-architect, ui-designer, ux-reviewer, implementer, reviewer, security-auditor, design-system-auditor, a11y-auditor | `composer-2.5-fast` |
 | Auto | doc-writer | `auto` |
 
 Read `model_policy:` from the convoy frontmatter when present; it overrides these defaults for that convoy.

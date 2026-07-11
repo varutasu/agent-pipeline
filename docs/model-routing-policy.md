@@ -27,7 +27,7 @@ Validated on Trimble usage (Jan–Jun 2026): ~72% of spend was Opus-tier; ~37% c
 | Tier | `model_tier` value | Default model ID | Roles |
 | --- | --- | --- | --- |
 | Premium | `premium` | `claude-4.6-opus-high-thinking` | conductor, architect |
-| Fast | `fast` | `composer-2.5-fast` | ia-architect, ux-reviewer, implementer, reviewer, security-auditor, design-system-auditor, a11y-auditor |
+| Fast | `fast` | `composer-2.5-fast` | ia-architect, ui-designer, ux-reviewer, implementer, reviewer, security-auditor, design-system-auditor, a11y-auditor |
 | Auto | `auto` | `auto` | doc-writer |
 
 ### Escalation (premium)
@@ -51,6 +51,7 @@ model_policy:
     role-conductor: claude-4.6-opus-high-thinking
     role-architect: claude-4.6-opus-high-thinking
     role-ia-architect: composer-2.5-fast
+    role-ui-designer: composer-2.5-fast
     role-ux-reviewer: composer-2.5-fast
     role-implementer: composer-2.5-fast
     role-reviewer: composer-2.5-fast
