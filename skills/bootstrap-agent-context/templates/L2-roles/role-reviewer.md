@@ -77,7 +77,7 @@ If you're tempted to mark something Critical and you're not sure, downgrade to S
 
 ## Hand-off
 
-User reads the report. If approve → human gate 2 (merge). If request-changes → user re-runs implementer with the findings.
+User reads the report. If approve → human gate 2 (merge). If request-changes → user invokes **implementer Mode 2 (fix pass)** with the findings pasted (see [`docs/multitask-playbook.md`](../../../../docs/multitask-playbook.md) Pattern E). Do not fix code in the reviewer role.
 
 ## Multitask (audit fan-out)
 

@@ -27,6 +27,8 @@ Agents **propose**; humans **merge**. No agent opens or merges PRs.
 
 Each posts a comment with a fixed header (`## Reviewer Report`, `## Security Audit`, etc.). `pr-health-rollup.yml` aggregates CI + report presence.
 
+**If reports request changes:** you review findings, then invoke **implementer Mode 2 (fix pass)** — human gate between audit and code changes, max 2 passes per brief. Re-run only the auditors whose domain you fixed. See [`multitask-playbook.md`](multitask-playbook.md) Pattern E.
+
 ### Skip flags
 
 Set by Conductor in convoy frontmatter and PR template:

@@ -72,7 +72,7 @@ The `multitask` column declares each role's parallelism mode for Cursor 3.2+. Se
 | **ui-designer** | Greenfield / redesign: generate + lock `design_direction` via `ui-ux-pro-max` | Append `## Design direction` + frontmatter | Read, Grep, Glob, Write, Shell | `single` | `composer-2.5-fast` |
 | **ux-reviewer** | Reuse existing components; list a11y constraints | Append `## UX` section to convoy | Read, Grep, Glob, Shell | `single` | `composer-2.5-fast` |
 | **architect** | File plan, schema diff, API surface; decompose into N briefs with `slice_dependencies:` | Append `## Architecture` + N `brief-N-*.md` files | Read, Grep, Glob, Shell | `single` | `claude-4.6-opus-high-thinking` |
-| **implementer** | Build one brief; stay strictly in scope; draft PR | Code changes + PR draft (not opened) | Read, Grep, Glob, Edit, Write, Shell | `per-brief` | `composer-2.5-fast` |
+| **implementer** | Mode 1: build one brief; Mode 2: fix pass after audit (max 2×); stay in `files:`; draft PR / amend summary | Code changes + PR draft or amend summary (not opened) | Read, Grep, Glob, Edit, Write, Shell | `per-brief` (Mode 1 fleet only) | `composer-2.5-fast` |
 | **reviewer** | Self-review the diff vs the brief; structured PR comment | Markdown comment ready to paste | Read, Grep, Glob, Shell | `audit-fanout` | `composer-2.5-fast` |
 | **security-auditor** | OWASP-style security audit — authz, injection, secrets, dependencies | Markdown comment (`## Security Audit`) | Read, Grep, Glob, Shell | `audit-fanout` | `composer-2.5-fast` |
 | **design-system-auditor** | Token violations, duplicate primitives, inline styles | Markdown comment | Read, Grep, Glob, Shell | `audit-fanout` | `composer-2.5-fast` |
@@ -119,7 +119,8 @@ The Conductor's classification drives default skips:
 | Establish visual direction for a new UI surface (opt-in skill) | ui-designer |
 | Audit a draft UI design before implementation | ux-reviewer |
 | Decompose a large feature into PR-sized briefs | architect |
-| Implement one brief at a time | implementer |
+| Implement one brief at a time | implementer (Mode 1 — build) |
+| Address audit findings on an open PR | implementer (Mode 2 — fix pass); see multitask-playbook Pattern E |
 | Self-review your own PR before requesting human review | reviewer |
 | Audit a PR for security (auth, injection, secrets) | security-auditor |
 | Audit a UI PR for design-system violations | design-system-auditor |

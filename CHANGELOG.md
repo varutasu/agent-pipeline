@@ -4,6 +4,12 @@ All notable changes to `agent-pipeline` are documented here. This file follows [
 
 ## [Unreleased]
 
+### Changed
+
+- **`role-implementer.md`** — Mode 1 (build) vs Mode 2 (fix pass after audit); max 2 fix passes per brief; amend-summary template; `pass=build|fix` pipeline comment for retros.
+- **`docs/multitask-playbook.md`** — Pattern E (correction workflow): human gate between audit and fix, subset re-audit, when not to use Mode 2.
+- **`role-reviewer.md`** — hand-off points to implementer Mode 2 / Pattern E instead of vague "re-run implementer".
+
 ### Added
 
 - **`skills/ui-ux-pro-max/`** — vendored MIT design-intelligence skill (BM25 search + design-system generator); opt-in at bootstrap (wave 1d).
