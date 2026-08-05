@@ -1,10 +1,15 @@
 <!--
-pipeline: convoy=<slug>, brief=<N>
+PR title for convoy work: convoy: <short description>
+(pipeline: convoy=<slug>, brief=<N>)
 skip: <comma-separated flags or empty>
 
 Skip flags (Conductor sets these — do not edit by hand):
   ia, ux, arch, test, review, security, visual, a11y, design, smoke, qa, docs, flag
 Never skip: plan-approval, pr-merge, prod-promote
+
+When convoy-metrics-gate.yml is installed: convoy PRs must add rows to
+.convoys/.metrics.jsonl. Run scripts/log-convoy-event.sh after each role,
+or add skip-metrics label with reason in the PR body.
 -->
 
 ## Summary

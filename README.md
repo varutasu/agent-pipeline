@@ -76,6 +76,8 @@ The L1 layer was validated against [`colab`](https://github.com/rstillwell-trimb
 
 For the canonical list of which repos consume this pipeline (and their sync state), see [docs/CONSUMERS.md](docs/CONSUMERS.md).
 
+**Visual walkthroughs:** [docs/walkthroughs/](docs/walkthroughs/) — start a convoy, metrics gate, fleet analytics.
+
 ## Contributing
 
 Fork, branch, PR. See [CONTRIBUTING.md](CONTRIBUTING.md). The smoke test (`tests/smoke.sh`) runs the bootstrap against fixture repos and checks for required artifacts — keep it green.

@@ -124,7 +124,11 @@ See the [multitask playbook](https://github.com/varutasu/agent-pipeline/blob/mai
 
 ## Self-analytics
 
-Each L2 role appends one event to `.convoys/.metrics.jsonl` via `scripts/log-convoy-event.sh`. The file is gitignored by default — events stay local. To opt-in to commit team-shared metrics, remove `.convoys/.metrics.jsonl` from `.gitignore`.
+Each L2 role appends one event to `.convoys/.metrics.jsonl` via `scripts/log-convoy-event.sh`.
+
+**When `convoy-metrics-gate.yml` is installed** (recommended): metrics are tracked in git so convoy PRs prove telemetry was logged. Remove any `.convoys/.metrics.jsonl` line from `.gitignore`. Events contain metadata only — no code, no prompts.
+
+**Without the gate**: the file is gitignored by default and events stay local. Remove `.convoys/.metrics.jsonl` from `.gitignore` only if you want team-shared metrics without the CI gate.
 
 Aggregate across repos and render a dashboard with the [agent-pipeline analytics scripts](https://github.com/varutasu/agent-pipeline/tree/main/analytics):
 
