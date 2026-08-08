@@ -1,0 +1,45 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// One row per role invocation from .convoys/.metrics.jsonl
+model ConvoyEvent {
+  id               String   @id
+  ts               DateTime
+  role             String
+  convoy           String
+  repo             String
+  brief            Int?
+  classification   String?
+  skipFlags        String[] @default([]) @map("skip_flags")
+  durationS        Int?     @map("duration_s")
+  stackClass       String?  @map("stack_class")
+  outcome          String?
+  multitaskGroup   String?  @map("multitask_group")
+  model            String?
+  modelTier        String?  @map("model_tier")
+  estimatedCostUsd Float?   @map("estimated_cost_usd")
+  sourceFullName   String?  @map("source_full_name")
+  ingestedAt       DateTime @default(now()) @map("ingested_at")
+
+  @@index([repo, convoy])
+  @@index([ts])
+  @@map("convoy_events")
+}
+
+model SyncRun {
+  id          String   @id @default(cuid())
+  source      String
+  eventsAdded Int      @map("events_added")
+  eventsTotal Int      @map("events_total")
+  detail      String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("sync_runs")
+}

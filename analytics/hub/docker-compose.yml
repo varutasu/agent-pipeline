@@ -1,0 +1,14 @@
+# Local / homelab compose when working from analytics/hub/
+# Prefer repo-root docker-compose.pipeline-analytics.yml for Coolify.
+
+services:
+  pipeline-analytics:
+    build:
+      context: ../../
+      dockerfile: analytics/hub/Dockerfile
+    container_name: pipeline-analytics
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "3010:3010"

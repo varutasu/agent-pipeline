@@ -1,13 +1,31 @@
 # Analytics
 
-Two complementary signals, both **fully local**, no service to run:
+Three ways to view fleet convoy telemetry:
+
+| Mode | Where | Best for |
+| --- | --- | --- |
+| **Remote hub** | `https://pipeline.stillwell.cloud` | Always-on fleet view from anywhere on the LAN / via VPN |
+| **Local HTML** | `~/agent-pipeline-data/dashboard.html` | Offline, includes transcript mining |
+| **JSON rollup** | `~/agent-pipeline-data/convoys.json` | Scripts, CI |
+
+Two complementary **data** signals:
 
 | Layer | Source | Run | What you learn |
 | --- | --- | --- | --- |
-| **Convoy events** (forward-looking) | `<each-repo>/.convoys/.metrics.jsonl` | `npx tsx analyze-convoys.ts <repo-paths...>` | Role usage frequency, classification distribution, skip patterns, time per role, convoy duration |
-| **Cursor transcripts** (retroactive) | `~/.cursor/projects/*/agent-transcripts/*.jsonl` | `npx tsx extract-transcripts.ts` | Tokens per chat, tool call breakdown, MCP usage, model used, wall-clock duration |
+| **Convoy events** (forward-looking) | `<each-repo>/.convoys/.metrics.jsonl` | `npx tsx analyze-convoys.ts <repo-paths...>` or hub sync | Role usage, skip patterns, duration, model tier |
+| **Cursor transcripts** (retroactive) | `~/.cursor/projects/*/agent-transcripts/*.jsonl` | `npx tsx extract-transcripts.ts` | Tool mix, MCP usage (tokens when Cursor exposes them) |
 
-Both feed the same dashboard:
+## Remote fleet dashboard (homelab)
+
+Deploy the **analytics hub** on Axiom (Coolify CT 107 + Postgres CT 102):
+
+- **Deploy guide:** [`hub/DEPLOY.md`](hub/DEPLOY.md)
+- **Push local repos:** `npx tsx push-to-hub.ts <repo-path> [...]`
+- **GitHub pull sync:** `POST /api/sync/github` with `SYNC_TOKEN` (metrics must be committed on `main`)
+
+Homelab compose reference: `axiom-server/other/pipeline-analytics.yml`
+
+## Local static dashboard
 
 ```bash
 npx tsx render-dashboard.ts
@@ -112,4 +130,7 @@ The dashboard surfaces these heuristics:
 | `render-dashboard.ts` | Produces a static HTML report from the two data sources |
 | `schemas/convoy-event.json` | JSON schema for one convoy-event row |
 | `schemas/transcript-summary.json` | JSON schema for one extracted transcript summary |
-| `dashboard-template.html` | Template the renderer fills in |
+| `dashboard-template.html` | Template the local renderer fills in |
+| `lib/rollup.ts` | Shared rollup logic (hub + analyze-convoys) |
+| `push-to-hub.ts` | POST local metrics to remote hub |
+| `hub/` | Next.js fleet dashboard service (Coolify deploy) |
