@@ -26,10 +26,11 @@ COPY --from=builder /build/hub/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /build/hub/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /build/hub/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /build/hub/node_modules/.bin/prisma ./node_modules/.bin/prisma
+COPY --from=builder /build/hub/package.json ./package.json
 COPY analytics/hub/docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 USER nextjs
 EXPOSE 3010
-HEALTHCHECK --interval=30s --timeout=3s --start-period=45s --retries=3 \
-  CMD wget -q --spider http://localhost:3010/ || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=5 \
+  CMD wget -q --spider http://localhost:3010/api/health || exit 1
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

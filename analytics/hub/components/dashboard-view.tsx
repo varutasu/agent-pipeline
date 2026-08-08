@@ -77,7 +77,15 @@ function signals(rollup: Rollup): string {
   return out.join("\n");
 }
 
-export function DashboardView({ rollup, lastSync }: { rollup: Rollup; lastSync: string | null }) {
+export function DashboardView({
+  rollup,
+  lastSync,
+  dbError,
+}: {
+  rollup: Rollup;
+  lastSync: string | null;
+  dbError?: string | null;
+}) {
   return (
     <div className="page">
       <header>
@@ -86,6 +94,13 @@ export function DashboardView({ rollup, lastSync }: { rollup: Rollup; lastSync: 
           Generated {rollup.generated_at}
           {lastSync ? ` · last sync ${lastSync}` : ""}
         </p>
+        {dbError ? (
+          <p className="db-error">
+            Database error: {dbError}. Check <code>DATABASE_URL</code> in Coolify (use
+            <code>?sslmode=disable</code> for homelab Postgres) and that CT 107 can reach
+            192.168.68.102:5432.
+          </p>
+        ) : null}
       </header>
 
       <div className="grid">

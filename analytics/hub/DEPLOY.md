@@ -43,7 +43,7 @@ The hub is **not on `main` yet**. In Coolify set branch to:
 Add environment variables in Coolify (not a local `.env` file unless you use one):
 
 ```env
-DATABASE_URL=postgresql://pipeline_analytics:YOUR_PASSWORD@192.168.68.102:5432/pipeline_analytics?schema=public
+DATABASE_URL=postgresql://pipeline_analytics:YOUR_PASSWORD@192.168.68.102:5432/pipeline_analytics?schema=public&sslmode=disable
 SYNC_TOKEN=<openssl rand -hex 32>
 GITHUB_TOKEN=<PAT with contents:read on private repos>
 SYNC_REPOS=stwl-labs/zest-finances:main,stwl-labs/deckhearth:main,rstillwell-trimb/colab:main
