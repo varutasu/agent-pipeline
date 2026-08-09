@@ -26,3 +26,17 @@ services:
       timeout: 3s
       start_period: 60s
       retries: 5
+
+  # Optional: GitHub metrics pull every 6h. Disable host cron on CT 107 if you use this sidecar.
+  pipeline-sync:
+    image: alpine:3.20
+    restart: unless-stopped
+    depends_on:
+      pipeline-analytics:
+        condition: service_healthy
+    environment:
+      SYNC_TOKEN: ${SYNC_TOKEN}
+      HUB_URL: http://pipeline-analytics:3010
+    volumes:
+      - ./analytics/hub/scripts/sync-cron-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]

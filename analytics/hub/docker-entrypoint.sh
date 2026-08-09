@@ -4,7 +4,7 @@
 
 if [ -n "${DATABASE_URL:-}" ]; then
   echo "Running prisma migrate deploy..."
-  if ./node_modules/.bin/prisma migrate deploy --schema ./prisma/schema.prisma; then
+  if node ./node_modules/prisma/build/index.js migrate deploy --schema ./prisma/schema.prisma; then
     echo "Prisma migrations applied."
   else
     echo "WARNING: prisma migrate deploy failed."

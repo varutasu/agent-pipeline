@@ -109,6 +109,51 @@ curl -X POST https://pipeline.stillwell.cloud/api/sync/github \
 
 Open `https://pipeline.stillwell.cloud` (Authentik admin).
 
+### Scheduled GitHub sync
+
+Pull metrics from GitHub on a schedule (`POST /api/sync/github`). Metrics must be
+**committed** on the branch in `SYNC_REPOS` (default gitignore keeps them local).
+
+**Option A — CT 107 host cron (works without redeploying Coolify)**
+
+See `axiom-server/proxmox/ct107/scripts/README.md`. Runs every 6 hours via
+`/opt/scripts/pipeline-analytics-sync.sh`.
+
+**Option B — Coolify scheduled task**
+
+Resource → Configuration → **Scheduled Tasks** → Add:
+
+| Field | Value |
+| --- | --- |
+| Name | `github-metrics-sync` |
+| Command | `/app/scripts/sync-github.sh` |
+| Frequency | `0 */6 * * *` (every 6 hours) |
+| Container | `pipeline-analytics` |
+| Timeout | `300` |
+
+Use **Execute Now** to test.
+
+**Option C — `pipeline-sync` sidecar (compose)**
+
+`docker-compose.pipeline-analytics.yml` includes a `pipeline-sync` service that runs
+sync at start and every 6 hours. Redeploy in Coolify after merging. Remove CT 107 host
+cron if you use the sidecar (avoid duplicate runs).
+
+### Authentik (required once)
+
+Traefik uses `authentik-admin` on this hostname. Without a forward-auth provider for
+`https://pipeline.stillwell.cloud`, Authentik shows “not found, go home”.
+
+From `axiom-server` (machine on the homelab LAN):
+
+```bash
+cd ~/Documents/Personal\ Coding\ Projects/axiom-server
+scp proxmox/ct100/authentik-organize-apps.py root@192.168.68.73:/tmp/
+ssh root@192.168.68.73 "pct push 100 /tmp/authentik-organize-apps.py /tmp/authentik-organize-apps.py && pct exec 100 -- docker cp /tmp/authentik-organize-apps.py authentik-server:/tmp/ && pct exec 100 -- docker exec authentik-server python3 /tmp/authentik-organize-apps.py"
+```
+
+Registers slug `pipeline` with **admin** tier (same as Umami). `/api/sync` skips Authentik via Traefik priority.
+
 ---
 
 ## Local development
