@@ -4,24 +4,26 @@ All notable changes to `agent-pipeline` are documented here. This file follows [
 
 ## [Unreleased]
 
-### Changed
+## [0.7.0] — 2026-08-10
 
-- **`role-implementer.md`** — Mode 1 (build) vs Mode 2 (fix pass after audit); max 2 fix passes per brief; amend-summary template; `pass=build|fix` pipeline comment for retros.
-- **`docs/multitask-playbook.md`** — Pattern E (correction workflow): human gate between audit and fix, subset re-audit, when not to use Mode 2.
-- **`role-reviewer.md`** — hand-off points to implementer Mode 2 / Pattern E instead of vague "re-run implementer".
-
-### Added
-
-- **`skills/ui-ux-pro-max/`** — vendored MIT design-intelligence skill (BM25 search + design-system generator); opt-in at bootstrap (wave 1d).
-- **`role-ui-designer.md`** — 11th L2 role; planning-only; locks `design_direction` on the convoy; paired with `ui-ux-pro-max`.
-- **`design_direction` convoy frontmatter** — versioned lock; documented in `.convoys/README.md`.
+Cost-aware model routing v2: move planning off default Opus; Cursor pool for architect; Grok for audit fan-out.
 
 ### Changed
 
-- **`role-conductor.md`** — `ui-design` skip flag; recommends UI Designer for greenfield UI features.
-- **`role-ux-reviewer.md`** — reads locked direction; does not re-run generator.
-- **`role-design-system-auditor.md`** — enforces `design_direction` on PR diffs.
-- **`bootstrap-agent-context/SKILL.md`** — wave 1d opt-in; 11 L2 roles.
+- **`docs/model-routing-policy.md`** — v0.7 tier table: `composer-2.5` (Standard) for architect; `cursor-grok-4.5-high` for reviewer/DS/a11y; `gpt-5.6-terra-medium` for security-auditor; Sonnet 5 escalation; Opus rare (`escalate_to_premium`).
+- **`model-routing.mdc.template`** — aligned always-on rule with v0.7 tiers.
+- **All 11 L2 role templates** — updated `model:` frontmatter and metrics examples.
+- **`role-conductor.md`** — default `composer-2.5-fast`; `model_policy` block v0.7; large-epic Sonnet 5 override note.
+- **`role-architect.md`** — default `composer-2.5` / `model_tier: standard`; brief default `recommended_model: composer-2.5`.
+- **`docs/role-reference.md`** — Model column updated.
+
+### Notes
+
+- Architect: select **Composer 2.5 Standard** in the model picker (not Fast).
+- Claude Sonnet 5 promo pricing ($2/$10) through Aug 31, 2026 — see Cursor model docs.
+- Run `sync-agent-context` on consumer repos to refresh `.cursor/agents/` and `model-routing.mdc`.
+
+## [Unreleased]
 
 ## [Unreleased] (Phase 5.1 security — prior entry)
 

@@ -7,7 +7,7 @@ description: >-
   for downstream roles, and hands off to the next role. Use when a new feature,
   bug fix, or epic is being kicked off and the work has not yet been scoped.
 multitask: single
-model: claude-4.6-opus-high-thinking
+model: composer-2.5-fast
 tools: [Read, Grep, Glob, Write, Shell]
 ---
 
@@ -46,18 +46,19 @@ created: <YYYY-MM-DD>
 model_policy:
   default_session: auto
   roles:
-    role-conductor: claude-4.6-opus-high-thinking
-    role-architect: claude-4.6-opus-high-thinking
+    role-conductor: composer-2.5-fast
+    role-architect: composer-2.5
     role-ia-architect: composer-2.5-fast
     role-ux-reviewer: composer-2.5-fast
     role-ui-designer: composer-2.5-fast
     role-implementer: composer-2.5-fast
-    role-reviewer: composer-2.5-fast
-    role-security-auditor: composer-2.5-fast
-    role-design-system-auditor: composer-2.5-fast
-    role-a11y-auditor: composer-2.5-fast
+    role-reviewer: cursor-grok-4.5-high
+    role-security-auditor: gpt-5.6-terra-medium
+    role-design-system-auditor: cursor-grok-4.5-high
+    role-a11y-auditor: cursor-grok-4.5-high
     role-doc-writer: auto
-  escalate_to: claude-4.6-opus-high-thinking
+  escalate_to: claude-sonnet-5-thinking-medium
+  escalate_to_premium: claude-4.6-opus-high-thinking
   never_premium:
     - role-reviewer
     - role-security-auditor
@@ -130,9 +131,10 @@ See [`docs/multitask-playbook.md`](../../../../docs/multitask-playbook.md) for t
 
 Include `model_policy:` in every convoy frontmatter (see Outputs). Tell the user:
 
-1. **Parent session:** `auto` or `composer-2.5-fast` unless they are running conductor/architect in this chat.
+1. **Parent session:** `auto` or `composer-2.5-fast` unless they are running architect in this chat (use **Composer 2.5 Standard** for architect).
 2. **Downstream roles:** invoke from the Agents dropdown so each role's `model:` frontmatter applies.
-3. **Audit fan-out:** fast models only — never Opus for reviewer / security-auditor / auditors.
+3. **Audit fan-out:** Grok / fast models only — never Opus for reviewer / security-auditor / auditors.
+4. **Large epics:** set `role-conductor: claude-sonnet-5-thinking-medium` in `model_policy` for this convoy only.
 
 Full policy: [`docs/model-routing-policy.md`](../../../../docs/model-routing-policy.md).
 
@@ -147,8 +149,8 @@ bash scripts/log-convoy-event.sh \
   classification=<feature|hotfix|docs-only|infra-only|server-only|config-only> \
   skip_flags=<comma,separated> \
   duration_s=<seconds-since-trigger> \
-  model=claude-4.6-opus-high-thinking \
-  model_tier=premium
+  model=composer-2.5-fast \
+  model_tier=fast
 ```
 
 If `scripts/log-convoy-event.sh` does not exist (L3 not installed), skip silently — analytics is opt-in.

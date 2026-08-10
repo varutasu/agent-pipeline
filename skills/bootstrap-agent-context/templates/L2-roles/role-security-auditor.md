@@ -7,7 +7,7 @@ description: >-
   middleware, env, or user input. Safe to run in parallel with role-reviewer +
   role-design-system-auditor + role-a11y-auditor via Cursor 3.2 /multitask.
 multitask: audit-fanout
-model: composer-2.5-fast
+model: gpt-5.6-terra-medium
 tools: [Read, Grep, Glob, Shell]
 ---
 
@@ -71,7 +71,7 @@ Part of the **audit fan-out cohort** (reviewer + **security-auditor** + design-s
 ## Metrics
 
 ```bash
-bash scripts/log-convoy-event.sh role=role-security-auditor convoy=<slug> brief=<N> duration_s=<seconds> model=composer-2.5-fast model_tier=fast [multitask_group=audit-<convoy>-<pr>]
+bash scripts/log-convoy-event.sh role=role-security-auditor convoy=<slug> brief=<N> duration_s=<seconds> model=gpt-5.6-terra-medium model_tier=fast [multitask_group=audit-<convoy>-<pr>]
 ```
 
 Skip silently if `scripts/log-convoy-event.sh` does not exist.

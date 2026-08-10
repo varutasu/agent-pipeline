@@ -8,7 +8,7 @@ description: >-
   Must run sequentially — decomposition output enables downstream
   implementer fan-out via Cursor 3.2 /multitask.
 multitask: single
-model: claude-4.6-opus-high-thinking
+model: composer-2.5
 tools: [Read, Grep, Glob, Shell]
 ---
 
@@ -61,8 +61,8 @@ Then create one **implementer brief** per row of the decomposition, as a separat
 convoy: <slug>
 brief_number: <N>
 depends_on: [<other brief numbers>]
-recommended_model: composer-2.5-fast
-model_tier: fast
+recommended_model: composer-2.5
+model_tier: standard
 files:
   - <path/to/file1>
   - <path/to/file2>
@@ -185,7 +185,7 @@ If the convoy's plan needs to change after `role-architect` has run (e.g. a user
 After writing the brief files, emit one event. Shell access is restricted to this single command.
 
 ```bash
-bash scripts/log-convoy-event.sh role=role-architect convoy=<slug> duration_s=<seconds> model=claude-4.6-opus-high-thinking model_tier=premium
+bash scripts/log-convoy-event.sh role=role-architect convoy=<slug> duration_s=<seconds> model=composer-2.5 model_tier=standard
 ```
 
 Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed).

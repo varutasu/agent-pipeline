@@ -67,16 +67,16 @@ The `multitask` column declares each role's parallelism mode for Cursor 3.2+. Se
 
 | Role | One-line job | Output | Tools | Multitask | Model |
 | --- | --- | --- | --- | --- | --- |
-| **conductor** | Classify the work; write the convoy file; set skip flags; recommend dispatch points | `.convoys/<slug>.md` | Read, Grep, Glob, Write, Shell | `single` | `claude-4.6-opus-high-thinking` |
+| **conductor** | Classify the work; write the convoy file; set skip flags; recommend dispatch points | `.convoys/<slug>.md` | Read, Grep, Glob, Write, Shell | `single` | `composer-2.5-fast` |
 | **ia-architect** | Map idea to existing IA — sitemap, user flow, screens | Append `## IA` section to convoy | Read, Grep, Glob, Shell | `single` | `composer-2.5-fast` |
 | **ui-designer** | Greenfield / redesign: generate + lock `design_direction` via `ui-ux-pro-max` | Append `## Design direction` + frontmatter | Read, Grep, Glob, Write, Shell | `single` | `composer-2.5-fast` |
 | **ux-reviewer** | Reuse existing components; list a11y constraints | Append `## UX` section to convoy | Read, Grep, Glob, Shell | `single` | `composer-2.5-fast` |
-| **architect** | File plan, schema diff, API surface; decompose into N briefs with `slice_dependencies:` | Append `## Architecture` + N `brief-N-*.md` files | Read, Grep, Glob, Shell | `single` | `claude-4.6-opus-high-thinking` |
+| **architect** | File plan, schema diff, API surface; decompose into N briefs with `slice_dependencies:` | Append `## Architecture` + N `brief-N-*.md` files | Read, Grep, Glob, Shell | `single` | `composer-2.5` (Standard) |
 | **implementer** | Mode 1: build one brief; Mode 2: fix pass after audit (max 2×); stay in `files:`; draft PR / amend summary | Code changes + PR draft or amend summary (not opened) | Read, Grep, Glob, Edit, Write, Shell | `per-brief` (Mode 1 fleet only) | `composer-2.5-fast` |
-| **reviewer** | Self-review the diff vs the brief; structured PR comment | Markdown comment ready to paste | Read, Grep, Glob, Shell | `audit-fanout` | `composer-2.5-fast` |
-| **security-auditor** | OWASP-style security audit — authz, injection, secrets, dependencies | Markdown comment (`## Security Audit`) | Read, Grep, Glob, Shell | `audit-fanout` | `composer-2.5-fast` |
-| **design-system-auditor** | Token violations, duplicate primitives, inline styles | Markdown comment | Read, Grep, Glob, Shell | `audit-fanout` | `composer-2.5-fast` |
-| **a11y-auditor** | Labels, keyboard, focus, contrast, semantic HTML | Markdown comment | Read, Grep, Glob, Shell | `audit-fanout` | `composer-2.5-fast` |
+| **reviewer** | Self-review the diff vs the brief; structured PR comment | Markdown comment ready to paste | Read, Grep, Glob, Shell | `audit-fanout` | `cursor-grok-4.5-high` |
+| **security-auditor** | OWASP-style security audit — authz, injection, secrets, dependencies | Markdown comment (`## Security Audit`) | Read, Grep, Glob, Shell | `audit-fanout` | `gpt-5.6-terra-medium` |
+| **design-system-auditor** | Token violations, duplicate primitives, inline styles | Markdown comment | Read, Grep, Glob, Shell | `audit-fanout` | `cursor-grok-4.5-high` |
+| **a11y-auditor** | Labels, keyboard, focus, contrast, semantic HTML | Markdown comment | Read, Grep, Glob, Shell | `audit-fanout` | `cursor-grok-4.5-high` |
 | **doc-writer** | Changelog, AGENTS.md updates, schema map regen | Docs PR | Read, Grep, Glob, Edit, Write, Shell | `single` | `auto` |
 
 See [`model-routing-policy.md`](model-routing-policy.md) for escalation rules and metrics.

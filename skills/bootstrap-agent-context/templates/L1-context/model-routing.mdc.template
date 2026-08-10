@@ -1,24 +1,27 @@
 ---
-description: Model tier defaults for the agent pipeline — Opus for planning only; fast models for build and audit
+description: Model tier defaults for the agent pipeline — Composer Standard for architect; fast/Grok for build and audit; Sonnet 5 escalation
 alwaysApply: true
 ---
 
-# Model routing (cost-aware pipeline)
+# Model routing (cost-aware pipeline, v0.7)
 
-Cursor subagent roles in `.cursor/agents/role-*.md` declare a `model:` in frontmatter. **Invoke roles from the Agents dropdown** (or a fresh chat pinned to that role) so the configured model applies. Parent chats on Opus that spawn Task subagents may override role models — see `docs/model-routing-policy.md`.
+Cursor subagent roles in `.cursor/agents/role-*.md` declare a `model:` in frontmatter. **Invoke roles from the Agents dropdown** (or a fresh chat pinned to that role) so the configured model applies. Parent chats on Opus that spawn Task subagents may override role models — see `docs/model-routing-policy.md` (or `docs/agent-context/model-routing-policy.md`).
 
 ## Default session model
 
 - **Parent chat (ad hoc work):** `auto` or `composer-2.5-fast`.
-- **Escalate to Opus** (`claude-4.6-opus-high-thinking`) only for conductor, architect, or after two failed implementer attempts on the same brief.
-- **Never use Opus 4.7 / xhigh** for routine pipeline work unless leadership explicitly approves a spike.
+- **Escalate to Sonnet 5** (`claude-sonnet-5-thinking-medium`) for failed implementer briefs or architect-flagged security/schema work.
+- **Opus** (`claude-4.6-opus-high-thinking`) only when a brief sets `recommended_model: claude-4.6-opus-high-thinking`.
+- **Never use Opus 4.7 / xhigh** for routine pipeline work.
 
-## Per-role tiers (canonical)
+## Per-role tiers (canonical, v0.7)
 
 | Tier | Roles | Model |
 | --- | --- | --- |
-| Premium | conductor, architect | `claude-4.6-opus-high-thinking` |
-| Fast | ia-architect, ui-designer, ux-reviewer, implementer, reviewer, security-auditor, design-system-auditor, a11y-auditor | `composer-2.5-fast` |
+| Standard | architect | `composer-2.5` (Standard mode in picker) |
+| Fast | conductor, ia-architect, ui-designer, ux-reviewer, implementer | `composer-2.5-fast` |
+| Audit | reviewer, design-system-auditor, a11y-auditor | `cursor-grok-4.5-high` |
+| Security | security-auditor | `gpt-5.6-terra-medium` |
 | Auto | doc-writer | `auto` |
 
 Read `model_policy:` from the convoy frontmatter when present; it overrides these defaults for that convoy.

@@ -9,7 +9,7 @@ description: >-
   Safe to run in parallel with role-security-auditor + role-design-system-auditor +
   role-a11y-auditor via Cursor 3.2 /multitask.
 multitask: audit-fanout
-model: composer-2.5-fast
+model: cursor-grok-4.5-high
 tools: [Read, Grep, Glob, Shell]
 ---
 
@@ -90,7 +90,7 @@ When invoked as part of a cohort, include the shared `multitask_group` id in the
 After publishing the review comment, emit one event:
 
 ```bash
-bash scripts/log-convoy-event.sh role=role-reviewer convoy=<slug> brief=<N> duration_s=<seconds> model=composer-2.5-fast model_tier=fast [multitask_group=audit-<convoy>-<pr>]
+bash scripts/log-convoy-event.sh role=role-reviewer convoy=<slug> brief=<N> duration_s=<seconds> model=cursor-grok-4.5-high model_tier=fast [multitask_group=audit-<convoy>-<pr>]
 ```
 
 Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed).

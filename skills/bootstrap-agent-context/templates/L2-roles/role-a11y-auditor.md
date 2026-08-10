@@ -7,7 +7,7 @@ description: >-
   PRs that touch UI files. Safe to run in parallel with role-reviewer +
   role-security-auditor + role-design-system-auditor via Cursor 3.2 /multitask.
 multitask: audit-fanout
-model: composer-2.5-fast
+model: cursor-grok-4.5-high
 tools: [Read, Grep, Glob, Shell]
 ---
 
@@ -65,7 +65,7 @@ Message: *"A11y audit complete. N findings (sev ≥ 3: M, sev < 3: K). Report: `
 After publishing:
 
 ```bash
-bash scripts/log-convoy-event.sh role=role-a11y-auditor convoy=<slug> duration_s=<seconds> model=composer-2.5-fast model_tier=fast [multitask_group=audit-<convoy>-<pr>]
+bash scripts/log-convoy-event.sh role=role-a11y-auditor convoy=<slug> duration_s=<seconds> model=cursor-grok-4.5-high model_tier=fast [multitask_group=audit-<convoy>-<pr>]
 ```
 
 Skip silently if `scripts/log-convoy-event.sh` does not exist (L3 not installed).
